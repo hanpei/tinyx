@@ -1,5 +1,12 @@
+use std::result;
+use error::Error;
+
+mod ast;
 pub mod lexer;
-mod token;
+pub mod parser;
+pub mod error;
+pub mod token;
 
 
-// type Result = Result<>
+
+pub type ParseResult<T> = result::Result<T, Error>;

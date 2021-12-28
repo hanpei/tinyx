@@ -1,103 +1,167 @@
 use std::{fmt::Display, str::from_utf8};
 
-use crate::token::Token;
+use crate::{token::Token, Error, ParseResult};
 
 #[derive(Debug)]
 pub struct Lexer<'a> {
+    pub filename: &'a str,
     source: &'a [u8],
     cursor: usize,
+    ln: usize,
+    col: usize,
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(source: &'a [u8]) -> Self {
-        Self { source, cursor: 0 }
+    pub fn new(source: &'a [u8], filename: &'a str) -> Self {
+        Self {
+            filename,
+            source,
+            cursor: 0,
+            ln: 1,
+            col: 1,
+        }
     }
 
-    pub fn next(&mut self) -> Option<u8> {
-        if self.cursor < self.source.len() {
-            let byte = self.source[self.cursor];
-            self.next_pos();
-            Some(byte)
-        } else {
+    pub fn pos(&mut self) -> (usize, usize) {
+        (self.ln, self.col - 1)
+    }
+
+    fn next_byte(&mut self) -> Option<u8> {
+        if self.is_eof() {
             return None;
         }
+        let byte = self.source[self.cursor];
+        self.next_pos();
+        Some(byte)
+    }
+
+    pub fn is_eof(&mut self) -> bool {
+        self.cursor == self.source.len()
     }
 
     fn next_pos(&mut self) {
         self.cursor += 1;
+        self.col += 1;
     }
 
-    fn lookahead(&mut self) -> Option<u8> {
-        let idx = self.cursor;
-        if idx < self.source.len() {
-            Some(self.source[idx])
+    fn newline(&mut self) {
+        self.ln += 1;
+        self.col = 1;
+    }
+
+    fn peek(&mut self) -> Option<u8> {
+        if self.is_eof() {
+            return None;
+        }
+        Some(self.source[self.cursor])
+    }
+
+    pub fn next(&mut self) -> ParseResult<Token> {
+        self.skip_whitespace();
+        if let Some(c) = self.next_byte() {
+            return Ok(match c {
+                b'0'..=b'9' => self.read_number(c)?,
+                b'\r' | b'\n' => self.read_eol(),
+                b'"' => self.read_string(c)?,
+                b'a'..=b'z' | b'A'..=b'Z' => self.read_ident(c)?,
+                b'+' | b'-' | b'*' | b'/' => self.read_operator(c)?,
+                b';' => Token::Semi,
+                b'{' => Token::BraceOpen,
+                b'}' => Token::BraceClose,
+                _ => {
+                    return Err(Error::invalid_charactor(
+                        self.filename,
+                        c as char,
+                        self.pos(),
+                    ));
+                }
+            });
         } else {
-            None
+            return Ok(Token::Eof);
         }
     }
 
-    pub fn tokenize(&mut self) -> Option<Token> {
-        loop {
-            if let Some(c) = self.next() {
-                return match c {
-                    b'0'..=b'9' => self.read_number(c),
-                    b'a'..=b'z' | b'A'..=b'Z' => self.read_label(c),
-                    b'\r' | b'\n' => self.read_eol(),
-                    b'+' | b'-' | b'*' | b'\\' => self.read_operator(c),
-                    _ => continue,
-                };
-            } else {
-                // return Some(Token::EOF);
-                return None;
-            }
-        }
-    }
-
-    fn read_number(&mut self, first: u8) -> Option<Token> {
+    fn read_number(&mut self, first: u8) -> ParseResult<Token> {
         let mut buf = String::new();
         buf.push(first as char);
-        while let Some(c) = self.lookahead() {
+        while let Some(c) = self.peek() {
             match c {
                 b'0'..=b'9' => buf.push(c as char),
                 _ => break,
             }
-            self.next();
+            self.next_byte();
         }
         match buf.parse::<f64>() {
-            Ok(i) => Some(Token::Number(i)),
-            Err(_) => None,
+            Ok(i) => Ok(Token::Number(i)),
+            Err(_e) => Err(Error::parse_number_error(self.filename, &buf, self.pos())),
         }
     }
 
-    fn read_label(&mut self, first: u8) -> Option<Token> {
+    fn read_string(&mut self, _c: u8) -> ParseResult<Token> {
+        let mut buf = vec![];
+        while let Some(c) = self.next_byte() {
+            match c {
+                b'"' => break,
+                _ => buf.push(c),
+            }
+        }
+        let s = String::from_utf8(buf).expect("invalid utf8");
+        Ok(Token::String(s))
+    }
+
+    fn read_ident(&mut self, first: u8) -> ParseResult<Token> {
+        // TODO: Identifier需要确定
         let mut buf = String::new();
         buf.push(first as char);
-        while let Some(c) = self.lookahead() {
+        while let Some(c) = self.peek() {
             match c {
                 b'a'..=b'z' | b'A'..=b'Z' => buf.push(c as char),
                 _ => break,
             }
-            self.next();
+            self.next_byte();
         }
-        Some(Token::Identifier(buf))
+        Ok(Token::Identifier(buf))
     }
 
-    fn read_eol(&mut self) -> Option<Token> {
-        Some(Token::Eol)
-    }
-
-    fn read_operator(&self, op: u8) -> Option<Token> {
+    fn read_operator(&self, op: u8) -> ParseResult<Token> {
         let s = String::from(op as char);
         //TODO: 处理“-”开头的的负数
         //TODO: 处理“/” 开头的comment或者regexp
-        
-        Some(Token::Operator(s))
+        Ok(Token::Operator(s))
     }
-}
 
-impl Display for Lexer<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", from_utf8(&self.source).unwrap())
+    fn read_eol(&mut self) -> Token {
+        self.newline();
+        Token::Eol
+    }
+
+    pub fn log(&mut self) {
+        loop {
+            match self.next() {
+                Ok(token) => match token {
+                    Token::Eof => {
+                        println!("{:?}", token);
+                        break;
+                    }
+                    _ => println!("{:?}", token),
+                },
+                Err(e) => {
+                    eprintln!("{:?}", e);
+                    break;
+                }
+            }
+        }
+    }
+
+    fn skip_whitespace(&mut self) {
+        while let Some(c) = self.peek() {
+            match c {
+                b' ' | b'\t' => {
+                    self.next_byte();
+                }
+                _ => break,
+            }
+        }
     }
 }
 
