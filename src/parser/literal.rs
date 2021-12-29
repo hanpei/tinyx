@@ -1,9 +1,4 @@
-use crate::{
-    ast::Expression,
-    error::Error,
-    token::{Token, TokenKind},
-    ParseResult,
-};
+use crate::{ast::Expression, error::Error, token::TokenKind, ParseResult};
 
 use super::parser::Parser;
 

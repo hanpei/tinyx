@@ -1,8 +1,6 @@
-use std::{fmt::Display, str::from_utf8};
-
 use crate::{
     token::{Token, TokenKind},
-    Error, ParseResult,
+    Error, ParseResult, ast::Operator,
 };
 
 #[derive(Debug, Clone, Copy)]

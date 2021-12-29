@@ -32,12 +32,12 @@ impl<'a> Parser<'a> {
         self.lookahead = self.next_token().expect("consume error");
     }
 
-    pub(super) fn maybe(&mut self, kind: TokenKind) {
-        match &self.lookahead.kind {
-            maybe if maybe == &kind => self.consume(),
-            _ => {}
-        }
-    }
+    // pub(super) fn maybe(&mut self, kind: TokenKind) {
+    //     match &self.lookahead.kind {
+    //         maybe if maybe == &kind => self.consume(),
+    //         _ => {}
+    //     }
+    // }
 
     pub(super) fn expect_semi_or_eol(&mut self) -> ParseResult<()> {
         match self.lookahead.kind {

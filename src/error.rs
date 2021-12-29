@@ -1,7 +1,4 @@
-use crate::{
-    lexer::Pos,
-    token::{Token, TokenKind},
-};
+use crate::{lexer::Pos, token::TokenKind};
 
 #[derive(Debug)]
 pub enum Error {
@@ -10,6 +7,7 @@ pub enum Error {
     InvalidToken(String),
     UnexpectedToken(String),
     MissingSemicolon(String),
+    LexingError(String),
 }
 
 impl Error {

@@ -1,4 +1,4 @@
-use std::fmt::{self, Debug};
+use std::fmt::Debug;
 
 pub type Ast = Program;
 
@@ -76,18 +76,18 @@ impl Operator {
             "-" => Min,
             "*" => Mul,
             "/" => Div,
-            _ => unimplemented!(),
+            _ => unimplemented!("{}", op),
         }
     }
 }
 
-#[derive(Debug)]
-pub struct Identifier {
-    name: String,
-}
+// #[derive(Debug)]
+// pub struct Identifier {
+//     name: String,
+// }
 
-impl Identifier {
-    pub fn new(name: String) -> Self {
-        Self { name }
-    }
-}
+// impl Identifier {
+//     pub fn new(name: String) -> Self {
+//         Self { name }
+//     }
+// }

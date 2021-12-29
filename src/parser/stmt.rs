@@ -1,9 +1,4 @@
-use crate::{
-    ast::{Expression, Statement},
-    error::Error,
-    token::{Token, TokenKind},
-    ParseResult,
-};
+use crate::{ast::Statement, token::TokenKind, ParseResult, error::Error};
 
 use super::parser::Parser;
 
@@ -41,16 +36,17 @@ impl<'a> Parser<'a> {
     fn parse_statment(&mut self) -> ParseResult<Statement> {
         // println!("{}", self.lookahead);
         match self.lookahead.kind {
+            TokenKind::BraceOpen => self.parse_block_stmt(),
             TokenKind::Semi => self.parse_empty_stmt(),
             TokenKind::Number => self.parse_expression_stmt(),
             TokenKind::String => self.parse_expression_stmt(),
-            TokenKind::BraceOpen => self.parse_block_stmt(),
             TokenKind::Identifier => self.parse_expression_stmt(),
-            _=> unimplemented!()
+            TokenKind::Operator => self.parse_expression_stmt(),
             // _ => Err(Error::invalid_token(
             //     self.tokenizer.filename,
             //     self.tokenizer.loc.start,
             // )),
+            _=> unimplemented!()
         }
     }
 
@@ -62,7 +58,7 @@ impl<'a> Parser<'a> {
      */
     fn parse_expression_stmt(&mut self) -> ParseResult<Statement> {
         let expr = self.parse_expression()?;
-        self.expect_semi_or_eol()?;
+        // self.expect_semi_or_eol()?;
         Ok(Statement::ExpressionStatement(expr))
     }
 
