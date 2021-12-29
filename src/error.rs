@@ -1,4 +1,7 @@
-use crate::token::{Token, TokenKind};
+use crate::{
+    lexer::Pos,
+    token::{Token, TokenKind},
+};
 
 #[derive(Debug)]
 pub enum Error {
@@ -6,35 +9,34 @@ pub enum Error {
     ParseError(String),
     InvalidToken(String),
     UnexpectedToken(String),
+    MissingSemicolon(String),
 }
 
 impl Error {
-    pub fn invalid_charactor(file: &str, c: char, pos: (usize, usize)) -> Error {
+    pub fn invalid_charactor(file: &str, c: char, pos: Pos) -> Error {
         Self::InvalidCharactor(format!(
             "unexpected character {} at {}:{}:{})",
-            c, file, pos.0, pos.1
+            c, file, pos.ln, pos.col
         ))
     }
 
-    pub fn parse_number_error(file: &str, s: &str, pos: (usize, usize)) -> Error {
-        Self::ParseError(format!(
-            "invalid number {} at {}:{}:{}",
-            s, file, pos.0, pos.1
-        ))
+    pub fn parse_number_error(file: &str, pos: Pos) -> Error {
+        Self::ParseError(format!("invalid number at {}:{}:{}", file, pos.ln, pos.col))
     }
-    pub fn invalid_token(file: &str, pos: (usize, usize)) -> Error {
-        Self::InvalidToken(format!("invalid token at {}:{}:{}", file, pos.0, pos.1))
+    pub fn invalid_token(file: &str, pos: Pos) -> Error {
+        Self::InvalidToken(format!("invalid token at {}:{}:{}", file, pos.ln, pos.col))
     }
 
-    pub fn unexpected_token(
-        file: &str,
-        kind: TokenKind,
-        expect: TokenKind,
-        pos: (usize, usize),
-    ) -> Error {
+    pub fn unexpected_token(file: &str, kind: &TokenKind, expect: &TokenKind, pos: Pos) -> Error {
         Self::UnexpectedToken(format!(
             "unexpected token: {}, expect is {} at {}:{}:{}",
-            kind, expect, file, pos.0, pos.1
+            kind, expect, file, pos.ln, pos.col
+        ))
+    }
+    pub fn missing_semi(file: &str, pos: Pos) -> Error {
+        Self::MissingSemicolon(format!(
+            "maybe missing semicolon at {}:{}:{}",
+            file, pos.ln, pos.col
         ))
     }
 }

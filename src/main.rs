@@ -3,7 +3,7 @@ use std::{
     io::{BufReader, Read},
 };
 
-use tinyx::{lexer::Lexer, parser::Parser};
+use tinyx::{lexer::Lexer, parser::parser::Parser};
 
 fn main() {
     let file = File::open("source.txt").unwrap();
@@ -12,15 +12,13 @@ fn main() {
     buf_reader.read_to_string(&mut contents).unwrap();
     let mut lexer = Lexer::new(&contents.as_bytes(), "source.txt");
     let mut parser = Parser::new(&contents, "source.txt");
-    
+
     println!("\nToken START");
     lexer.log();
     println!("Token END\n");
-
 
     println!("AST START");
     let ast = parser.parse();
     println!("{:#?}", ast);
     println!("AST END\n");
-
 }

@@ -19,16 +19,29 @@ impl Program {
 #[derive(Debug)]
 pub enum Statement {
     ExpressionStatement(Expression),
-    BlockStatement(Vec<Statement>)
+    BlockStatement(Vec<Statement>),
+    EmptyStatement,
 }
-
 
 #[derive(Debug)]
 pub enum Expression {
     Expr,
     NumericLiteral(f64),
+    StringLiteral(String),
     BinaryExpr(BinaryExpr),
+    IdentifierExpr(String),
 }
+
+// #[derive(Debug)]
+// pub struct StringLiteral {
+//     value: String,
+// }
+
+// impl StringLiteral {
+//     pub fn new(value: String) -> Self {
+//         Self { value }
+//     }
+// }
 
 #[derive(Debug)]
 pub struct BinaryExpr {
@@ -65,5 +78,16 @@ impl Operator {
             "/" => Div,
             _ => unimplemented!(),
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct Identifier {
+    name: String,
+}
+
+impl Identifier {
+    pub fn new(name: String) -> Self {
+        Self { name }
     }
 }
