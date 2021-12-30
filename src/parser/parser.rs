@@ -65,7 +65,7 @@ impl<'a> Parser<'a> {
                     self.tokenizer.filename,
                     &self.lookahead.kind,
                     &kind,
-                    self.tokenizer.pos(),
+                    self.lookahead.loc.start,
                 ))
             }
         }

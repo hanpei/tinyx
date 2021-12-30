@@ -98,6 +98,8 @@ impl<'a> Lexer<'a> {
                     b';' => Token::new(TokenKind::Semi, ";".to_string(), start, self.pos()),
                     b'{' => Token::new(TokenKind::BraceOpen, "{".to_string(), start, self.pos()),
                     b'}' => Token::new(TokenKind::BraceClose, "}".to_string(), start, self.pos()),
+                    b'(' => Token::new(TokenKind::BracketOpen, "(".to_string(), start, self.pos()),
+                    b')' => Token::new(TokenKind::BracketClose, ")".to_string(), start, self.pos()),
                     _ => {
                         return Err(Error::invalid_charactor(
                             self.filename,
@@ -166,7 +168,8 @@ impl<'a> Lexer<'a> {
         let s = String::from(op as char);
         //TODO: 处理“-”开头的的负数
         //TODO: 处理“/” 开头的comment或者regexp
-        Ok(Token::new(TokenKind::Operator, s, start, self.pos()))
+        let op = Operator::from(&s);
+        Ok(Token::new(TokenKind::Operator(op), s, start, self.pos()))
     }
 
     fn read_eol(&mut self, start: Pos) -> Token {

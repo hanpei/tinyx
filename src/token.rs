@@ -1,4 +1,4 @@
-use crate::lexer::{Loc, Pos};
+use crate::{lexer::{Loc, Pos}, ast::Operator};
 
 // #[derive(Debug, Clone)]
 // pub enum Token {
@@ -67,11 +67,13 @@ pub enum TokenKind {
     Number,
     Identifier,
     String,
-    Operator,
+    Operator(Operator),
     Semi,
     None,
     BraceOpen,
     BraceClose,
+    BracketOpen,
+    BracketClose,
 }
 
 impl std::fmt::Display for TokenKind {
@@ -82,11 +84,13 @@ impl std::fmt::Display for TokenKind {
             TokenKind::Number => write!(f, "[ Number ]"),
             TokenKind::Identifier => write!(f, "[ Identifier ]"),
             TokenKind::String => write!(f, "[ String ]"),
-            TokenKind::Operator => write!(f, "[ Operator ]"),
+            TokenKind::Operator(_) => write!(f, "[ Operator ]"),
             TokenKind::Semi => write!(f, "[ Semi ]"),
             TokenKind::None => write!(f, "[ None ]"),
             TokenKind::BraceOpen => write!(f, "[ BraceOpen ]"),
             TokenKind::BraceClose => write!(f, "[ BraceClose ]"),
+            TokenKind::BracketOpen => write!(f, "[ BracketOpen ]"),
+            TokenKind::BracketClose => write!(f, "[ BracketClose ]"),
         }
     }
 }

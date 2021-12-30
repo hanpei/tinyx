@@ -35,18 +35,21 @@ impl<'a> Parser<'a> {
      */
     fn parse_statment(&mut self) -> ParseResult<Statement> {
         // println!("{}", self.lookahead);
+        println!("{:?}", self.lookahead);
+
         match self.lookahead.kind {
             TokenKind::BraceOpen => self.parse_block_stmt(),
             TokenKind::Semi => self.parse_empty_stmt(),
+            TokenKind::BracketOpen => self.parse_expression_stmt(),
             TokenKind::Number => self.parse_expression_stmt(),
             TokenKind::String => self.parse_expression_stmt(),
             TokenKind::Identifier => self.parse_expression_stmt(),
-            TokenKind::Operator => self.parse_expression_stmt(),
-            // _ => Err(Error::invalid_token(
-            //     self.tokenizer.filename,
-            //     self.tokenizer.loc.start,
-            // )),
-            _=> unimplemented!()
+            TokenKind::Operator(_) => self.parse_expression_stmt(),
+            _ => Err(Error::invalid_token(
+                self.tokenizer.filename,
+                self.lookahead.loc.start,
+            )),
+            // _=> unimplemented!()
         }
     }
 
@@ -58,7 +61,7 @@ impl<'a> Parser<'a> {
      */
     fn parse_expression_stmt(&mut self) -> ParseResult<Statement> {
         let expr = self.parse_expression()?;
-        // self.expect_semi_or_eol()?;
+        self.expect_semi_or_eol()?;
         Ok(Statement::ExpressionStatement(expr))
     }
 
@@ -73,7 +76,6 @@ impl<'a> Parser<'a> {
         let stmt = self.parse_statement_list()?;
         self.expect(TokenKind::BraceClose)?;
         self.consume();
-
         Ok(Statement::BlockStatement(stmt))
     }
 

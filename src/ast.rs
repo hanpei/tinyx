@@ -60,7 +60,7 @@ impl BinaryExpr {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Operator {
     Add,
     Min,
