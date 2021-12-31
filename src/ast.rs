@@ -1,5 +1,7 @@
 use std::fmt::Debug;
 
+use crate::token::{Keyword, Operator};
+
 pub type Ast = Program;
 
 #[derive(Debug)]
@@ -21,27 +23,16 @@ pub enum Statement {
     ExpressionStatement(Expression),
     BlockStatement(Vec<Statement>),
     EmptyStatement,
+    LetStatement(LetStatement),
 }
 
 #[derive(Debug)]
 pub enum Expression {
-    Expr,
     NumericLiteral(f64),
     StringLiteral(String),
     BinaryExpr(BinaryExpr),
-    IdentifierExpr(String),
+    Identifier(Identifier),
 }
-
-// #[derive(Debug)]
-// pub struct StringLiteral {
-//     value: String,
-// }
-
-// impl StringLiteral {
-//     pub fn new(value: String) -> Self {
-//         Self { value }
-//     }
-// }
 
 #[derive(Debug)]
 pub struct BinaryExpr {
@@ -60,34 +51,25 @@ impl BinaryExpr {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub enum Operator {
-    Add,
-    Min,
-    Mul,
-    Div,
+#[derive(Debug)]
+pub struct Identifier {
+    name: String,
 }
 
-impl Operator {
-    pub fn from(op: &str) -> Self {
-        use Operator::*;
-        match op {
-            "+" => Add,
-            "-" => Min,
-            "*" => Mul,
-            "/" => Div,
-            _ => unimplemented!("{}", op),
-        }
+impl Identifier {
+    pub fn new(name: String) -> Self {
+        Self { name }
     }
 }
 
-// #[derive(Debug)]
-// pub struct Identifier {
-//     name: String,
-// }
+#[derive(Debug)]
+pub struct LetStatement {
+    id: Identifier,
+    init: Option<Expression>,
+}
 
-// impl Identifier {
-//     pub fn new(name: String) -> Self {
-//         Self { name }
-//     }
-// }
+impl LetStatement {
+    pub fn new(id: Identifier, init: Option<Expression>) -> Self {
+        Self { id, init }
+    }
+}

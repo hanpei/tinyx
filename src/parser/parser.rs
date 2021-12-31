@@ -7,7 +7,7 @@ use crate::{lexer::Lexer, token::Token};
 pub struct Parser<'a> {
     pub tokenizer: Lexer<'a>,
     pub ast: Ast,
-    pub lookahead: Token,
+    pub current_token: Token,
 }
 
 impl<'a> Parser<'a> {
@@ -15,7 +15,7 @@ impl<'a> Parser<'a> {
         Self {
             tokenizer: Lexer::new(source.as_bytes(), filename),
             ast: Program::new(),
-            lookahead: Token::new(
+            current_token: Token::new(
                 TokenKind::None,
                 "init".to_string(),
                 Pos::new(1, 1),
@@ -29,26 +29,32 @@ impl<'a> Parser<'a> {
     }
 
     pub(super) fn consume(&mut self) {
-        self.lookahead = self.next_token().expect("consume error");
+        self.current_token = self.next_token().expect("consume error");
     }
 
-    // pub(super) fn maybe(&mut self, kind: TokenKind) {
-    //     match &self.lookahead.kind {
-    //         maybe if maybe == &kind => self.consume(),
-    //         _ => {}
-    //     }
-    // }
+    pub(super) fn maybe(&mut self, kind: TokenKind) {
+        match &self.current_token.kind {
+            maybe if maybe == &kind => self.consume(),
+            _ => {}
+        }
+    }
+
+    // 调试用
+    pub(super) fn log(&mut self) {
+        println!("token {}", self.current_token);
+    }
 
     pub(super) fn expect_semi_or_eol(&mut self) -> ParseResult<()> {
-        match self.lookahead.kind {
+        match self.current_token.kind {
+            TokenKind::BraceClose => self.consume(),
             TokenKind::Semi => self.consume(),
-            _ => match self.lookahead.kind {
+            _ => match self.current_token.kind {
                 TokenKind::Eol => self.consume(),
                 TokenKind::Eof => self.consume(),
                 _ => {
                     return Err(Error::missing_semi(
                         self.tokenizer.filename,
-                        self.lookahead.loc.end,
+                        self.current_token.loc.end,
                     ))
                 }
             },
@@ -57,18 +63,21 @@ impl<'a> Parser<'a> {
     }
 
     pub(super) fn expect(&mut self, kind: TokenKind) -> ParseResult<()> {
-        match &self.lookahead.kind {
-            TokenKind::Eof => Ok(()),
+        match &self.current_token.kind {
             ty if ty == &kind => Ok(()),
             _ => {
                 return Err(Error::unexpected_token(
                     self.tokenizer.filename,
-                    &self.lookahead.kind,
+                    &self.current_token.kind,
                     &kind,
-                    self.lookahead.loc.start,
+                    self.current_token.loc.start,
                 ))
             }
         }
+    }
+    pub(super) fn next_token_is(&mut self, expect_kind: TokenKind) -> bool {
+        let kind = &self.current_token.kind;
+        kind == &expect_kind
     }
 
     pub fn parse(&mut self) -> ParseResult<&Ast> {
@@ -77,8 +86,8 @@ impl<'a> Parser<'a> {
     }
 
     /**
-     *  Program    Vec<Statement>
-     *      : StatementList
+     *  Program  
+     *      : StatementList -> = Vec<Statement>
      *      ;
      */
     fn parse_program(&mut self) -> ParseResult<()> {

@@ -1,6 +1,7 @@
 use crate::{
-    token::{Token, TokenKind},
-    Error, ParseResult, ast::Operator,
+    token::Operator,
+    token::{Keyword, Token, TokenKind},
+    Error, ParseResult,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -93,8 +94,8 @@ impl<'a> Lexer<'a> {
                     b'0'..=b'9' => self.read_number(c, start)?,
                     b'\r' | b'\n' => self.read_eol(start),
                     b'"' => self.read_string(c, start)?,
-                    b'a'..=b'z' | b'A'..=b'Z' => self.read_ident(c, start)?,
-                    b'+' | b'-' | b'*' | b'/' => self.read_operator(c, start)?,
+                    b'a'..=b'z' | b'A'..=b'Z' => self.read_identifier(c, start)?,
+                    b'+' | b'-' | b'*' | b'/' | b'=' => self.read_operator(c, start)?,
                     b';' => Token::new(TokenKind::Semi, ";".to_string(), start, self.pos()),
                     b'{' => Token::new(TokenKind::BraceOpen, "{".to_string(), start, self.pos()),
                     b'}' => Token::new(TokenKind::BraceClose, "}".to_string(), start, self.pos()),
@@ -130,10 +131,10 @@ impl<'a> Lexer<'a> {
             }
             self.next_byte();
         }
-        Ok(Token::new(TokenKind::Number, buf, start, self.pos()))
-        // match buf.parse::<f64>() {
-        //     Err(_e) => Err(Error::parse_number_error(self.filename, &buf, self.pos())),
-        // }
+        match buf.parse::<f64>() {
+            Ok(n) => Ok(Token::new(TokenKind::Number(n), buf, start, self.pos())),
+            Err(_e) => Err(Error::parse_number_error(self.filename, self.pos())),
+        }
     }
 
     fn read_string(&mut self, _c: u8, start: Pos) -> ParseResult<Token> {
@@ -145,12 +146,12 @@ impl<'a> Lexer<'a> {
             }
         }
 
+        // TODO: excaped , unicode..
         let s = String::from_utf8(buf).expect("invalid utf8");
         Ok(Token::new(TokenKind::String, s, start, self.pos()))
     }
 
-    fn read_ident(&mut self, first: u8, start: Pos) -> ParseResult<Token> {
-        // TODO: Identifier需要确定
+    fn read_identifier(&mut self, first: u8, start: Pos) -> ParseResult<Token> {
         let mut buf = String::new();
         buf.push(first as char);
         while let Some(c) = self.peek() {
@@ -161,14 +162,15 @@ impl<'a> Lexer<'a> {
             self.next_byte();
         }
 
-        Ok(Token::new(TokenKind::Identifier, buf, start, self.pos()))
+        match Keyword::from_str(&buf) {
+            Some(key) => Ok(Token::new(TokenKind::Keyword(key), buf, start, self.pos())),
+            None => Ok(Token::new(TokenKind::Identifier, buf, start, self.pos())),
+        }
     }
 
     fn read_operator(&mut self, op: u8, start: Pos) -> ParseResult<Token> {
         let s = String::from(op as char);
-        //TODO: 处理“-”开头的的负数
-        //TODO: 处理“/” 开头的comment或者regexp
-        let op = Operator::from(&s);
+        let op = Operator::from_str(&s);
         Ok(Token::new(TokenKind::Operator(op), s, start, self.pos()))
     }
 

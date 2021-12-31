@@ -1,35 +1,4 @@
-use crate::{lexer::{Loc, Pos}, ast::Operator};
-
-// #[derive(Debug, Clone)]
-// pub enum Token {
-//     Eof,
-//     Eol,
-//     Number(f64),
-//     Identifier(String),
-//     String(String),
-//     Operator(String),
-//     Semi,
-//     None,
-//     BraceOpen,
-//     BraceClose,
-// }
-
-// impl Token {
-//     pub fn kind(&mut self) -> TokenKind {
-//         match self {
-//             Token::Eof => TokenKind::Eof,
-//             Token::Eol => TokenKind::Eol,
-//             Token::Number(_) => TokenKind::Number,
-//             Token::Identifier(_) => TokenKind::Identifier,
-//             Token::String(_) => TokenKind::String,
-//             Token::Operator(_) => TokenKind::Operator,
-//             Token::Semi => TokenKind::Semi,
-//             Token::None => TokenKind::None,
-//             Token::BraceOpen => TokenKind::BraceOpen,
-//             Token::BraceClose => TokenKind::BraceClose,
-//         }
-//     }
-// }
+use crate::lexer::{Loc, Pos};
 
 #[derive(Debug)]
 pub struct Token {
@@ -59,12 +28,11 @@ impl std::fmt::Display for Token {
     }
 }
 
-
 #[derive(Debug, PartialEq)]
 pub enum TokenKind {
     Eof,
     Eol,
-    Number,
+    Number(f64),
     Identifier,
     String,
     Operator(Operator),
@@ -74,6 +42,7 @@ pub enum TokenKind {
     BraceClose,
     BracketOpen,
     BracketClose,
+    Keyword(Keyword),
 }
 
 impl std::fmt::Display for TokenKind {
@@ -81,7 +50,7 @@ impl std::fmt::Display for TokenKind {
         match self {
             TokenKind::Eof => write!(f, "[ Eof ]"),
             TokenKind::Eol => write!(f, "[ Eol ]"),
-            TokenKind::Number => write!(f, "[ Number ]"),
+            TokenKind::Number(_) => write!(f, "[ Number ]"),
             TokenKind::Identifier => write!(f, "[ Identifier ]"),
             TokenKind::String => write!(f, "[ String ]"),
             TokenKind::Operator(_) => write!(f, "[ Operator ]"),
@@ -91,6 +60,45 @@ impl std::fmt::Display for TokenKind {
             TokenKind::BraceClose => write!(f, "[ BraceClose ]"),
             TokenKind::BracketOpen => write!(f, "[ BracketOpen ]"),
             TokenKind::BracketClose => write!(f, "[ BracketClose ]"),
+            TokenKind::Keyword(_) => write!(f, "[ BracketClose ]"),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Keyword {
+    Let,
+}
+
+impl Keyword {
+    pub fn from_str(value: &str) -> Option<Keyword> {
+        use Keyword::*;
+        match value {
+            "let" => Some(Let),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Operator {
+    Add,
+    Min,
+    Mul,
+    Div,
+    Assign
+}
+
+impl Operator {
+    pub fn from_str(op: &str) -> Self {
+        use Operator::*;
+        match op {
+            "+" => Add,
+            "-" => Min,
+            "*" => Mul,
+            "/" => Div,
+            "=" => Assign,
+            _ => unimplemented!("{}", op),
         }
     }
 }

@@ -1,9 +1,6 @@
-use std::io::BufRead;
-
 use crate::{
-    ast::{BinaryExpr, Expression, Operator},
-    error::Error,
-    token::TokenKind,
+    ast::{BinaryExpr, Expression, Identifier},
+    token::{Operator, TokenKind},
     ParseResult,
 };
 
@@ -28,10 +25,10 @@ impl<'a> Parser<'a> {
      */
     pub(super) fn parse_additive_expr(&mut self) -> ParseResult<Expression> {
         let mut left = self.parse_mul_expr()?;
-        while self.lookahead.kind == TokenKind::Operator(Operator::Add)
-            || self.lookahead.kind == TokenKind::Operator(Operator::Min)
+        while self.current_token.kind == TokenKind::Operator(Operator::Add)
+            || self.current_token.kind == TokenKind::Operator(Operator::Min)
         {
-            let op = Operator::from(&self.lookahead.raw);
+            let op = Operator::from_str(&self.current_token.raw);
             self.consume();
             let right = self.parse_mul_expr()?;
             left = Expression::BinaryExpr(BinaryExpr::new(left, op, right));
@@ -46,10 +43,10 @@ impl<'a> Parser<'a> {
      */
     pub(super) fn parse_mul_expr(&mut self) -> ParseResult<Expression> {
         let mut left = self.parse_primary_expr()?;
-        while self.lookahead.kind == TokenKind::Operator(Operator::Mul)
-            || self.lookahead.kind == TokenKind::Operator(Operator::Div)
+        while self.current_token.kind == TokenKind::Operator(Operator::Mul)
+            || self.current_token.kind == TokenKind::Operator(Operator::Div)
         {
-            let op = Operator::from(&self.lookahead.raw);
+            let op = Operator::from_str(&self.current_token.raw);
             self.consume();
             let right = self.parse_primary_expr()?;
             left = Expression::BinaryExpr(BinaryExpr::new(left, op, right));
@@ -65,11 +62,10 @@ impl<'a> Parser<'a> {
      *      ;
      */
     fn parse_primary_expr(&mut self) -> ParseResult<Expression> {
-        match self.lookahead.kind {
-            TokenKind::Number | TokenKind::String => self.parse_literal(),
-            TokenKind::Identifier => self.parse_identifier(),
+        match self.current_token.kind {
+            TokenKind::Number(_) | TokenKind::String => self.parse_literal(),
+            TokenKind::Identifier => self.parse_identifier_expr(),
             TokenKind::BracketOpen => self.parse_parenthesized_expr(),
-
             _ => unimplemented!(),
         }
     }
@@ -97,23 +93,32 @@ impl<'a> Parser<'a> {
      *   ;
      */
     fn parse_literal(&mut self) -> ParseResult<Expression> {
-        match self.lookahead.kind {
-            TokenKind::Number => self.parse_number(),
+        match self.current_token.kind {
+            TokenKind::Number(n) => self.parse_number(n),
             TokenKind::Identifier => todo!(),
             TokenKind::String => self.parse_string(),
-            _ => unreachable!("{:?}", self.lookahead.kind),
+            _ => unreachable!("{:?}", self.current_token.kind),
         }
     }
 
     /**
-     * Identifier
-     *      : IDENTIFIER
+     * IdentifierExpression
+     *      : Identifier
      *      ;
      */
-    fn parse_identifier(&mut self) -> ParseResult<Expression> {
+    pub fn parse_identifier_expr(&mut self) -> ParseResult<Expression> {
+        let ident = self.parse_identifier()?;
+        Ok(Expression::Identifier(ident))
+    }
+
+    /**
+     *  Identifier
+     *      :IDENTIFIER
+     */
+    pub fn parse_identifier(&mut self) -> ParseResult<Identifier> {
         self.expect(TokenKind::Identifier)?;
-        let ident = self.lookahead.raw.to_string();
-        let expr = Expression::IdentifierExpr(ident);
+        let name = self.current_token.raw.to_string();
+        let expr = Identifier::new(name);
         self.consume();
         Ok(expr)
     }
