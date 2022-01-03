@@ -10,6 +10,7 @@ fn main() {
     let mut buf_reader = BufReader::new(file);
     let mut contents = String::new();
     buf_reader.read_to_string(&mut contents).unwrap();
+    
     let mut lexer = Lexer::new(&contents.as_bytes(), "source.txt");
     let mut parser = Parser::new(&contents, "source.txt");
 

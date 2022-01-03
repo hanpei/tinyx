@@ -10,11 +10,8 @@ pub struct Program {
 }
 
 impl Program {
-    pub fn new() -> Self {
-        Program { body: Vec::new() }
-    }
-    pub fn content(&mut self, node: Vec<Statement>) {
-        self.body = node;
+    pub fn new(node: Vec<Statement>) -> Self {
+        Program { body: node }
     }
 }
 
