@@ -1,10 +1,8 @@
-use std::fmt::Debug;
-
-use crate::token::{Keyword, Operator};
+use crate::token::Operator;
 
 pub type Ast = Program;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Program {
     body: Vec<Statement>,
 }
@@ -15,31 +13,32 @@ impl Program {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Statement {
-    ExpressionStatement(Expression),
-    BlockStatement(Vec<Statement>),
-    EmptyStatement,
-    LetStatement(LetStatement),
+    ExprStmt(Expr),
+    Block(Vec<Statement>),
+    Empty,
+    VariableDeclaration(VariableDeclaration),
 }
 
-#[derive(Debug)]
-pub enum Expression {
+#[derive(Debug, PartialEq)]
+pub enum Expr {
     NumericLiteral(f64),
     StringLiteral(String),
-    BinaryExpr(BinaryExpr),
+    Binary(BinaryExpr),
     Identifier(Identifier),
+    Assign(AssignExpr),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct BinaryExpr {
-    left: Box<Expression>,
+    left: Box<Expr>,
     op: Operator,
-    right: Box<Expression>,
+    right: Box<Expr>,
 }
 
 impl BinaryExpr {
-    pub fn new(left: Expression, op: Operator, right: Expression) -> Self {
+    pub fn new(left: Expr, op: Operator, right: Expr) -> Self {
         Self {
             left: Box::new(left),
             op,
@@ -48,7 +47,7 @@ impl BinaryExpr {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Identifier {
     name: String,
 }
@@ -59,14 +58,31 @@ impl Identifier {
     }
 }
 
-#[derive(Debug)]
-pub struct LetStatement {
+#[derive(Debug, PartialEq)]
+pub struct VariableDeclaration {
     id: Identifier,
-    init: Option<Expression>,
+    init: Option<Expr>,
 }
 
-impl LetStatement {
-    pub fn new(id: Identifier, init: Option<Expression>) -> Self {
+impl VariableDeclaration {
+    pub fn new(id: Identifier, init: Option<Expr>) -> Self {
         Self { id, init }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct AssignExpr {
+    op: Operator,
+    left: Identifier,
+    right: Box<Expr>,
+}
+
+impl AssignExpr {
+    pub fn new(op: Operator, left: Identifier, right: Expr) -> Self {
+        Self {
+            op,
+            left,
+            right: Box::new(right),
+        }
     }
 }

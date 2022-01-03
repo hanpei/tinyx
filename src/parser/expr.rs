@@ -1,5 +1,6 @@
 use crate::{
-    ast::{BinaryExpr, Expression, Identifier},
+    ast::{AssignExpr, BinaryExpr, Expr, Identifier},
+    error::Error,
     token::{Operator, TokenKind},
     ParseResult,
 };
@@ -8,13 +9,43 @@ use super::parser::Parser;
 
 impl<'a> Parser<'a> {
     /**
+     *  AssignmentExpression
+     *      : AdditiveExpression
+     *      : AdditiveExpression (ASSIGN AdditiveExpression)?
+     */
+    pub(super) fn parse_assign_expr(&mut self) -> ParseResult<Expr> {
+        let left = self.parse_additive_expr()?;
+        match self.current_token.kind {
+            TokenKind::Operator(Operator::Assign) => {
+                let op_loc = self.current_token.loc;
+                self.consume();
+                let right = self.parse_additive_expr()?;
+                match left {
+                    Expr::Identifier(ident) => Ok(Expr::Assign(AssignExpr::new(
+                        Operator::Assign,
+                        ident,
+                        right,
+                    ))),
+                    _ => {
+                        return Err(Error::invalid_assignment(
+                            self.tokenizer.filename,
+                            op_loc.start,
+                        ));
+                    }
+                }
+            }
+            _ => Ok(left),
+        }
+    }
+    /**
      *  Expression
      *      : AdditiveExpression
      *      : ... todo
      *      ;
      */
-    pub(super) fn parse_expression(&mut self) -> ParseResult<Expression> {
-        self.parse_additive_expr()
+    pub(super) fn parse_expression(&mut self) -> ParseResult<Expr> {
+        self.parse_assign_expr()
+        // self.parse_additive_expr()
     }
 
     /**
@@ -23,7 +54,7 @@ impl<'a> Parser<'a> {
      *      : AdditiveExpression OP Literal -> Literal OP Literal Op Literal ...
      *      ;
      */
-    pub(super) fn parse_additive_expr(&mut self) -> ParseResult<Expression> {
+    pub(super) fn parse_additive_expr(&mut self) -> ParseResult<Expr> {
         let mut left = self.parse_mul_expr()?;
         while self.current_token.kind == TokenKind::Operator(Operator::Add)
             || self.current_token.kind == TokenKind::Operator(Operator::Min)
@@ -31,7 +62,7 @@ impl<'a> Parser<'a> {
             let op = Operator::from_str(&self.current_token.raw);
             self.consume();
             let right = self.parse_mul_expr()?;
-            left = Expression::BinaryExpr(BinaryExpr::new(left, op, right));
+            left = Expr::Binary(BinaryExpr::new(left, op, right));
         }
         Ok(left)
     }
@@ -41,7 +72,7 @@ impl<'a> Parser<'a> {
      *      : MultiplicativeExpression OP PrimaryExpression -> PrimaryExpression OP PrimaryExpression Op PrimaryExpression ...
      *      ;
      */
-    pub(super) fn parse_mul_expr(&mut self) -> ParseResult<Expression> {
+    pub(super) fn parse_mul_expr(&mut self) -> ParseResult<Expr> {
         let mut left = self.parse_primary_expr()?;
         while self.current_token.kind == TokenKind::Operator(Operator::Mul)
             || self.current_token.kind == TokenKind::Operator(Operator::Div)
@@ -49,7 +80,7 @@ impl<'a> Parser<'a> {
             let op = Operator::from_str(&self.current_token.raw);
             self.consume();
             let right = self.parse_primary_expr()?;
-            left = Expression::BinaryExpr(BinaryExpr::new(left, op, right));
+            left = Expr::Binary(BinaryExpr::new(left, op, right));
         }
         Ok(left)
     }
@@ -61,12 +92,16 @@ impl<'a> Parser<'a> {
      *      | Identifier
      *      ;
      */
-    fn parse_primary_expr(&mut self) -> ParseResult<Expression> {
+    fn parse_primary_expr(&mut self) -> ParseResult<Expr> {
         match self.current_token.kind {
             TokenKind::Number(_) | TokenKind::String => self.parse_literal(),
             TokenKind::Identifier => self.parse_identifier_expr(),
             TokenKind::BracketOpen => self.parse_parenthesized_expr(),
-            _ => unimplemented!(),
+            _ => Err(Error::invalid_token(
+                self.tokenizer.filename,
+                self.current_token.loc.start,
+            )),
+            // _ => unimplemented!(),
         }
     }
 
@@ -75,7 +110,7 @@ impl<'a> Parser<'a> {
      *   : '(' Expression ')'
      *   ;
      */
-    fn parse_parenthesized_expr(&mut self) -> ParseResult<Expression> {
+    fn parse_parenthesized_expr(&mut self) -> ParseResult<Expr> {
         self.expect(TokenKind::BracketOpen)?;
         self.consume();
         let expr = self.parse_expression()?;
@@ -92,7 +127,7 @@ impl<'a> Parser<'a> {
      *   | NullLiteral
      *   ;
      */
-    fn parse_literal(&mut self) -> ParseResult<Expression> {
+    fn parse_literal(&mut self) -> ParseResult<Expr> {
         match self.current_token.kind {
             TokenKind::Number(n) => self.parse_number(n),
             TokenKind::Identifier => todo!(),
@@ -106,9 +141,9 @@ impl<'a> Parser<'a> {
      *      : Identifier
      *      ;
      */
-    pub fn parse_identifier_expr(&mut self) -> ParseResult<Expression> {
+    pub fn parse_identifier_expr(&mut self) -> ParseResult<Expr> {
         let ident = self.parse_identifier()?;
-        Ok(Expression::Identifier(ident))
+        Ok(Expr::Identifier(ident))
     }
 
     /**

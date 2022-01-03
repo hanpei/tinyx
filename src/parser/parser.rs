@@ -49,6 +49,7 @@ impl<'a> Parser<'a> {
     pub(super) fn expect_stmt_seperator(&mut self) -> ParseResult<()> {
         match self.current_token.kind {
             TokenKind::BraceClose => (),
+            TokenKind::Eof => (),
             TokenKind::Semi => {
                 self.consume();
                 self.maybe(TokenKind::Eol);
