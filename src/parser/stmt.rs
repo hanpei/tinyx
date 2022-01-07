@@ -10,26 +10,18 @@ use super::parser::Parser;
 impl<'a> Parser<'a> {
     /**
      * StatementList
-     *      : (Statement ";"?)*
+     *      : (Statement)*
      *      ;
      */
     pub(super) fn parse_statement_list(&mut self) -> ParseResult<Vec<Statement>> {
         let mut list = Vec::new();
 
-        while self.current_token.kind != TokenKind::Eof {
+        while !self.token_is(TokenKind::Eof) && !self.token_is(TokenKind::BraceClose) {
             match self.current_token.kind {
                 TokenKind::Eol => self.consume(),
-                // TokenKind::Eof => break,
-                TokenKind::BraceClose => break,
-                _ => {
-                    let stmt = self.parse_statment()?;
-                    self.expect_stmt_seperator()?;
-
-                    list.push(stmt);
-                }
+                _ => list.push(self.parse_statment()?),
             }
         }
-
         Ok(list)
     }
 
@@ -55,7 +47,7 @@ impl<'a> Parser<'a> {
             TokenKind::Keyword(Keyword::Let) => self.parse_variable_stmt(),
             TokenKind::Keyword(Keyword::If) => self.parse_if_stmt(),
             _ => {
-                println!("error token: ");
+                println!("parse_statment error token: ");
                 self.log();
                 return Err(Error::invalid_token(
                     self.tokenizer.filename,
@@ -67,33 +59,38 @@ impl<'a> Parser<'a> {
 
     /**
      *  ExpressionStatement
-     *      : Expresssion
-     *      : Expression ";"
+     *      : Expression (";" | "\n" | ";\n")?
      *      ;
      */
     fn parse_expression_stmt(&mut self) -> ParseResult<Statement> {
         let expr = self.parse_expression()?;
+        self.expect_end_with_semi()?;
+
         Ok(Statement::ExprStmt(expr))
     }
 
     /**
      *  BlockStatement
      *      : "{" ( StatementList )? "}"
-     *      : '{' ('eol') StatementList ('eol') '}'
      *      ;
      */
     fn parse_block_stmt(&mut self) -> ParseResult<Statement> {
         self.eat(TokenKind::BraceOpen)?;
         self.maybe(TokenKind::Eol);
-        let stmt = self.parse_statement_list()?;
+        let mut list: Vec<Statement> = Vec::new();
+        if self.current_token.kind != TokenKind::BraceClose {
+            list = self.parse_statement_list()?;
+        }
         self.maybe(TokenKind::Eol);
         self.eat(TokenKind::BraceClose)?;
-        Ok(Statement::Block(stmt))
+
+        Ok(Statement::Block(list))
     }
 
     /**
      *  EmptyStatement
      *      : ";"
+     *      | ";\n"
      *      ;
      */
 
@@ -109,7 +106,9 @@ impl<'a> Parser<'a> {
      */
     fn parse_variable_stmt(&mut self) -> ParseResult<Statement> {
         self.eat(TokenKind::Keyword(Keyword::Let))?;
-        self.parse_variable_declaration()
+        let stmt = self.parse_variable_declaration()?;
+        self.expect_end_with_semi()?;
+        Ok(stmt)
     }
 
     /**
@@ -118,7 +117,7 @@ impl<'a> Parser<'a> {
      */
     fn parse_variable_declaration(&mut self) -> ParseResult<Statement> {
         let left = self.parse_identifier()?;
-        if self.expect_token_is(TokenKind::Operator(Operator::Assign)) {
+        if self.token_is(TokenKind::Operator(Operator::Assign)) {
             self.eat(TokenKind::Operator(Operator::Assign))?;
             let right = self.parse_expression()?;
             Ok(Statement::VariableDeclaration(VariableDeclaration::new(
@@ -144,7 +143,7 @@ impl<'a> Parser<'a> {
         self.eat(TokenKind::ParenClose)?;
 
         let consequent = self.parse_statment()?;
-        let alternate = if self.expect_token_is(TokenKind::Keyword(Keyword::Else)) {
+        let alternate = if self.token_is(TokenKind::Keyword(Keyword::Else)) {
             self.eat(TokenKind::Keyword(Keyword::Else))?;
             Some(self.parse_statment()?)
         } else {

@@ -40,7 +40,7 @@ impl Token {
 }
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[{}] {}", self.kind, self.raw)
+        write!(f, "[{}]: {}", self.kind, self.raw)
     }
 }
 
@@ -51,6 +51,7 @@ pub enum TokenKind {
     Number,
     Identifier,
     String,
+    Boolean,
     Operator(Operator),
     Semi,
     None,
@@ -77,6 +78,7 @@ impl std::fmt::Display for TokenKind {
             TokenKind::ParenOpen => write!(f, "ParenOpen"),
             TokenKind::ParenClose => write!(f, "ParenClose"),
             TokenKind::Keyword(key) => write!(f, "Keyword::{}", key),
+            TokenKind::Boolean => write!(f, "Boolean"),
         }
     }
 }

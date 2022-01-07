@@ -137,9 +137,13 @@ impl<'a> Lexer<'a> {
             self.next_byte();
         }
 
-        match Keyword::from_str(&buf) {
-            Some(key) => Ok(Token::new(TokenKind::Keyword(key), buf, start, self.pos())),
-            None => Ok(Token::new(TokenKind::Identifier, buf, start, self.pos())),
+        if &buf == "true" || &buf == "false" {
+            Ok(Token::new(TokenKind::Boolean, buf, start, self.pos()))
+        } else {
+            match Keyword::from_str(&buf) {
+                Some(key) => Ok(Token::new(TokenKind::Keyword(key), buf, start, self.pos())),
+                None => Ok(Token::new(TokenKind::Identifier, buf, start, self.pos())),
+            }
         }
     }
 
@@ -168,8 +172,20 @@ impl<'a> Lexer<'a> {
         Ok(Token::new(TokenKind::Operator(op), buf, start, self.pos()))
     }
 
+    // 多个空行，仅返回一个\n，用来判断auto semi insertion
     fn read_eol(&mut self, start: Pos) -> Token {
         self.newline();
+
+        while let Some(c) = self.peek() {
+            match c {
+                b'\n' | b'\r' => {
+                    self.newline();
+                    self.next_byte();
+                }
+                _ => break,
+            }
+        }
+
         Token::new(TokenKind::Eol, "EndOfLine".to_string(), start, self.pos())
     }
 
@@ -177,7 +193,7 @@ impl<'a> Lexer<'a> {
         loop {
             match self.next() {
                 Ok(token) => match token.kind {
-                    TokenKind::Eol => continue,
+                    // TokenKind::Eol => continue,
                     TokenKind::Eof => {
                         break;
                     }

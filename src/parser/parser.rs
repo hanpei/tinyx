@@ -45,24 +45,25 @@ impl<'a> Parser<'a> {
 
     // statement结尾的情况';'  '\n'  ';\n'
     // 或者是在block中 最后一个是'}'
-    pub(super) fn expect_stmt_seperator(&mut self) -> ParseResult<()> {
+    pub(super) fn expect_end_with_semi(&mut self) -> ParseResult<()> {
         match self.current_token.kind {
             TokenKind::BraceClose => (),
-            TokenKind::Eof => (),
+            TokenKind::Eof => self.consume(),
+            TokenKind::Eol => self.consume(),
             TokenKind::Semi => {
                 self.consume();
                 self.maybe(TokenKind::Eol);
             }
-            _ => match self.current_token.kind {
-                TokenKind::Eol => self.consume(),
-                _ => {
-                    return Err(Error::invalid_token(
-                        self.tokenizer.filename,
-                        self.current_token.loc.start,
-                    ))
-                }
-            },
+            _ => {
+                println!("expect_end_with_semi err");
+                self.log();
+                return Err(Error::invalid_token(
+                    self.tokenizer.filename,
+                    self.current_token.loc.start,
+                ));
+            }
         }
+
         Ok(())
     }
 
@@ -75,7 +76,7 @@ impl<'a> Parser<'a> {
                     &self.current_token.kind,
                     &kind,
                     self.current_token.loc.start,
-                ))
+                ));
             }
         }
     }
@@ -87,7 +88,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub(super) fn expect_token_is(&mut self, expect_kind: TokenKind) -> bool {
+    pub(super) fn token_is(&mut self, expect_kind: TokenKind) -> bool {
         let kind = &self.current_token.kind;
         kind == &expect_kind
     }
@@ -97,9 +98,20 @@ impl<'a> Parser<'a> {
         Ok(node)
     }
 
+    pub(super) fn skip_eol(&mut self) {
+        loop {
+            if self.current_token.kind == TokenKind::Eol {
+                println!("eeeeeeol");
+                self.consume();
+            } else {
+                break;
+            }
+        }
+    }
+
     /**
      *  Program  
-     *      : StatementList
+     *      : (StatementList)?
      *      ;
      */
     fn parse_program(&mut self) -> ParseResult<Program> {

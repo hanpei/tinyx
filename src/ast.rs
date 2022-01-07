@@ -26,6 +26,7 @@ pub enum Statement {
 pub enum Expr {
     NumericLiteral(f64),
     StringLiteral(String),
+    BooleanLiteral(bool),
     Binary(BinaryExpr),
     Identifier(Identifier),
     Assign(AssignExpr),

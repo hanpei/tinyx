@@ -2,10 +2,11 @@ use crate::{
     ast::{BinaryExpr, Expr, Identifier, Program, Statement, VariableDeclaration},
     parser::parser::Parser,
     token::Operator,
+    ParseResult,
 };
 
 #[test]
-fn test_block_statment() {
+fn test_block_statment() -> ParseResult<()> {
     let slist = vec![
         r#"{1}"#,
         r#"{1;}"#,
@@ -31,8 +32,9 @@ fn test_block_statment() {
     ];
     for s in slist.iter() {
         let mut program = Parser::new(s, "");
-        program.parse().unwrap();
+        program.parse()?;
     }
+    Ok(())
 }
 
 #[test]

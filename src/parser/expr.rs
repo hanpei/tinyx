@@ -58,12 +58,12 @@ impl<'a> Parser<'a> {
 
     pub(super) fn parse_relational_expr(&mut self) -> ParseResult<Expr> {
         let mut left = self.parse_additive_expr()?;
-        while self.expect_token_is(TokenKind::Operator(Operator::LessThan))
-            || self.expect_token_is(TokenKind::Operator(Operator::LessThanEqual))
-            || self.expect_token_is(TokenKind::Operator(Operator::GreaterThan))
-            || self.expect_token_is(TokenKind::Operator(Operator::GreaterThanEqual))
-            || self.expect_token_is(TokenKind::Operator(Operator::Equal))
-            || self.expect_token_is(TokenKind::Operator(Operator::NotEqual))
+        while self.token_is(TokenKind::Operator(Operator::LessThan))
+            || self.token_is(TokenKind::Operator(Operator::LessThanEqual))
+            || self.token_is(TokenKind::Operator(Operator::GreaterThan))
+            || self.token_is(TokenKind::Operator(Operator::GreaterThanEqual))
+            || self.token_is(TokenKind::Operator(Operator::Equal))
+            || self.token_is(TokenKind::Operator(Operator::NotEqual))
         {
             let op = Operator::from_str(&self.current_token.raw);
             self.consume();
@@ -110,20 +110,23 @@ impl<'a> Parser<'a> {
     /**
      * PrimaryExpression
      *      : Literal
-     *      | ParenthesizedExpression
      *      | Identifier
+     *      | ParenthesizedExpression
      *      ;
      */
     fn parse_primary_expr(&mut self) -> ParseResult<Expr> {
         match self.current_token.kind {
-            TokenKind::Number | TokenKind::String => self.parse_literal(),
+            TokenKind::Number | TokenKind::String | TokenKind::Boolean => self.parse_literal(),
             TokenKind::Identifier => self.parse_identifier_expr(),
             TokenKind::ParenOpen => self.parse_parenthesized_expr(),
-            _ => Err(Error::invalid_token(
-                self.tokenizer.filename,
-                self.current_token.loc.start,
-            )),
-            // _ => unimplemented!(),
+            _ => {
+                println!("parse_primary_expr error");
+                self.log();
+                return Err(Error::invalid_token(
+                    self.tokenizer.filename,
+                    self.current_token.loc.start,
+                ));
+            } // _ => unimplemented!(),
         }
     }
 
@@ -150,8 +153,8 @@ impl<'a> Parser<'a> {
     fn parse_literal(&mut self) -> ParseResult<Expr> {
         match self.current_token.kind {
             TokenKind::Number => self.parse_number(),
-            TokenKind::Identifier => todo!(),
             TokenKind::String => self.parse_string(),
+            TokenKind::Boolean => self.parse_boolean(),
             _ => unreachable!("{:?}", self.current_token.kind),
         }
     }

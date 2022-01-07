@@ -3,7 +3,7 @@ use std::{
     io::{BufReader, Read},
 };
 
-use tinyx::parser::parser::Parser;
+use tinyx::{lexer::Lexer, parser::parser::Parser};
 
 fn main() {
     let file = File::open("source.txt").unwrap();
@@ -11,10 +11,10 @@ fn main() {
     let mut contents = String::new();
     buf_reader.read_to_string(&mut contents).unwrap();
 
-    // println!("\n------- TOKEN START -----------\n");
-    // let mut lexer = Lexer::new(&contents.as_bytes(), "source.txt");
-    // lexer.log();
-    // println!("\n-------TOKEN END -----------\n\n");
+    println!("\n------- TOKEN START -----------\n");
+    let mut lexer = Lexer::new(&contents.as_bytes(), "source.txt");
+    lexer.log();
+    println!("\n-------TOKEN END -----------\n\n");
 
     println!("\n-------- AST START ----------\n");
     let mut parser = Parser::new(&contents, "source.txt");
