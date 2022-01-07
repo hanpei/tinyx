@@ -1,32 +1,8 @@
 use crate::{
-    token::Operator,
     token::{Keyword, Token, TokenKind},
+    token::{Loc, Operator, Pos},
     Error, ParseResult,
 };
-
-#[derive(Debug, Clone, Copy)]
-pub struct Pos {
-    pub ln: usize,
-    pub col: usize,
-}
-
-impl Pos {
-    pub fn new(ln: usize, col: usize) -> Self {
-        Self { ln, col }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Loc {
-    pub start: Pos,
-    pub end: Pos,
-}
-
-impl Loc {
-    pub fn new(start: Pos, end: Pos) -> Self {
-        Self { start, end }
-    }
-}
 
 #[derive(Debug)]
 pub struct Lexer<'a> {
@@ -95,12 +71,14 @@ impl<'a> Lexer<'a> {
                     b'\r' | b'\n' => self.read_eol(start),
                     b'"' => self.read_string(c, start)?,
                     b'a'..=b'z' | b'A'..=b'Z' => self.read_identifier(c, start)?,
-                    b'+' | b'-' | b'*' | b'/' | b'=' => self.read_operator(c, start)?,
+                    b'+' | b'-' | b'*' | b'/' | b'=' | b'>' | b'<' | b'!' => {
+                        self.read_operator(c, start)?
+                    }
                     b';' => Token::new(TokenKind::Semi, ";".to_string(), start, self.pos()),
                     b'{' => Token::new(TokenKind::BraceOpen, "{".to_string(), start, self.pos()),
                     b'}' => Token::new(TokenKind::BraceClose, "}".to_string(), start, self.pos()),
-                    b'(' => Token::new(TokenKind::BracketOpen, "(".to_string(), start, self.pos()),
-                    b')' => Token::new(TokenKind::BracketClose, ")".to_string(), start, self.pos()),
+                    b'(' => Token::new(TokenKind::ParenOpen, "(".to_string(), start, self.pos()),
+                    b')' => Token::new(TokenKind::ParenClose, ")".to_string(), start, self.pos()),
                     _ => {
                         return Err(Error::invalid_charactor(
                             self.filename,
@@ -114,7 +92,7 @@ impl<'a> Lexer<'a> {
                 return Ok(Token::new(
                     TokenKind::Eof,
                     "EndOfFile".to_string(),
-                    self.pos(),
+                    start,
                     self.pos(),
                 ))
             }
@@ -131,10 +109,7 @@ impl<'a> Lexer<'a> {
             }
             self.next_byte();
         }
-        match buf.parse::<f64>() {
-            Ok(n) => Ok(Token::new(TokenKind::Number(n), buf, start, self.pos())),
-            Err(_e) => Err(Error::parse_number_error(self.filename, self.pos())),
-        }
+        Ok(Token::new(TokenKind::Number, buf, start, self.pos()))
     }
 
     fn read_string(&mut self, _c: u8, start: Pos) -> ParseResult<Token> {
@@ -168,10 +143,29 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    /**
+     *  '+' | '-' | '*' | '/' | '=' | '>' | '<' | '!'
+     *  '==' | '>=' | '<=' | '!='
+     */
     fn read_operator(&mut self, op: u8, start: Pos) -> ParseResult<Token> {
-        let s = String::from(op as char);
-        let op = Operator::from_str(&s);
-        Ok(Token::new(TokenKind::Operator(op), s, start, self.pos()))
+        let mut buf = String::new();
+
+        match op {
+            x @ (b'+' | b'-' | b'*' | b'/') => buf.push(x as char),
+            x @ (b'=' | b'>' | b'<' | b'!') => {
+                if self.peek() == Some(b'=') {
+                    buf.push(x as char);
+                    buf.push('=');
+                    self.next_byte();
+                } else {
+                    buf.push(x as char)
+                }
+            }
+            _ => unimplemented!(),
+        }
+
+        let op = Operator::from_str(&buf);
+        Ok(Token::new(TokenKind::Operator(op), buf, start, self.pos()))
     }
 
     fn read_eol(&mut self, start: Pos) -> Token {
@@ -211,6 +205,7 @@ impl<'a> Lexer<'a> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
 
     #[test]
     fn test_read_number() {
@@ -224,5 +219,9 @@ mod tests {
     }
 
     #[test]
-    fn temp() {}
+    fn test_read_operator() {
+        let s = "+ - * / = ! == >= <= > <";
+        let mut lex = Lexer::new(s.as_bytes(), "test");
+        lex.log();
+    }
 }

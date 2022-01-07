@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Statement, VariableDeclaration},
+    ast::{IfStatement, Statement, VariableDeclaration},
     error::Error,
     token::{Keyword, Operator, TokenKind},
     ParseResult,
@@ -10,7 +10,7 @@ use super::parser::Parser;
 impl<'a> Parser<'a> {
     /**
      * StatementList
-     *      | (Statement Seperator)*
+     *      : (Statement ";"?)*
      *      ;
      */
     pub(super) fn parse_statement_list(&mut self) -> ParseResult<Vec<Statement>> {
@@ -36,9 +36,10 @@ impl<'a> Parser<'a> {
     /**
      *  Statement
      *      : ExpressionStatement
-     *      : BlockStatement
-     *      : LetStatement
-     *      : EmptyStatement
+     *      | BlockStatement
+     *      | VariableStatement
+     *      | EmptyStatement
+     *      | IfStatement
      *      ;
      *      ...
      */
@@ -46,12 +47,13 @@ impl<'a> Parser<'a> {
         match self.current_token.kind {
             TokenKind::BraceOpen => self.parse_block_stmt(),
             TokenKind::Semi => self.parse_empty_stmt(),
-            TokenKind::BracketOpen => self.parse_expression_stmt(),
-            TokenKind::Number(_) => self.parse_expression_stmt(),
+            TokenKind::ParenOpen => self.parse_expression_stmt(),
+            TokenKind::Number => self.parse_expression_stmt(),
             TokenKind::String => self.parse_expression_stmt(),
             TokenKind::Operator(_) => self.parse_expression_stmt(),
             TokenKind::Identifier => self.parse_expression_stmt(),
             TokenKind::Keyword(Keyword::Let) => self.parse_variable_stmt(),
+            TokenKind::Keyword(Keyword::If) => self.parse_if_stmt(),
             _ => {
                 println!("error token: ");
                 self.log();
@@ -76,6 +78,7 @@ impl<'a> Parser<'a> {
 
     /**
      *  BlockStatement
+     *      : "{" ( StatementList )? "}"
      *      : '{' ('eol') StatementList ('eol') '}'
      *      ;
      */
@@ -101,7 +104,7 @@ impl<'a> Parser<'a> {
 
     /**
      *  VariableStatement
-     *      : "let" VariableDeclaration
+     *      : "let" VariableDeclaration (";")?
      *      ;
      */
     fn parse_variable_stmt(&mut self) -> ParseResult<Statement> {
@@ -111,11 +114,11 @@ impl<'a> Parser<'a> {
 
     /**
      * VariableDeclaration
-     *      : Identifier (AssignmentExpression)?
+     *      : Identifier ( "=" AssignmentExpression)?
      */
     fn parse_variable_declaration(&mut self) -> ParseResult<Statement> {
         let left = self.parse_identifier()?;
-        if self.next_token_is(TokenKind::Operator(Operator::Assign)) {
+        if self.expect_token_is(TokenKind::Operator(Operator::Assign)) {
             self.eat(TokenKind::Operator(Operator::Assign))?;
             let right = self.parse_expression()?;
             Ok(Statement::VariableDeclaration(VariableDeclaration::new(
@@ -127,5 +130,28 @@ impl<'a> Parser<'a> {
                 left, None,
             )))
         }
+    }
+
+    /**
+     * IfStatement
+     *      : "if" "(" Expression ")" Statement ( "else" Statement )?
+     *
+     */
+    fn parse_if_stmt(&mut self) -> ParseResult<Statement> {
+        self.eat(TokenKind::Keyword(Keyword::If))?;
+        self.eat(TokenKind::ParenOpen)?;
+        let test = self.parse_expression()?;
+        self.eat(TokenKind::ParenClose)?;
+
+        let consequent = self.parse_statment()?;
+        let alternate = if self.expect_token_is(TokenKind::Keyword(Keyword::Else)) {
+            self.eat(TokenKind::Keyword(Keyword::Else))?;
+            Some(self.parse_statment()?)
+        } else {
+            None
+        };
+
+        let if_stmt = IfStatement::new(test, consequent, alternate);
+        Ok(Statement::IfStatement(if_stmt))
     }
 }

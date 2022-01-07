@@ -1,4 +1,4 @@
-use crate::{lexer::Pos, token::TokenKind};
+use crate::token::{Pos, TokenKind};
 
 #[derive(Debug)]
 pub enum Error {

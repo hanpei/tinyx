@@ -1,11 +1,12 @@
-use std::result;
 use error::Error;
+use std::result;
 
-mod ast;
-pub mod lexer;
+pub mod ast;
 pub mod error;
-pub mod token;
+pub mod evaluator;
+pub mod lexer;
 pub mod parser;
-
+pub mod token;
+pub mod value;
 
 pub type ParseResult<T> = result::Result<T, Error>;

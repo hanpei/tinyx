@@ -4,7 +4,7 @@ pub type Ast = Program;
 
 #[derive(Debug, PartialEq)]
 pub struct Program {
-    body: Vec<Statement>,
+    pub body: Vec<Statement>,
 }
 
 impl Program {
@@ -19,6 +19,7 @@ pub enum Statement {
     Block(Vec<Statement>),
     Empty,
     VariableDeclaration(VariableDeclaration),
+    IfStatement(IfStatement),
 }
 
 #[derive(Debug, PartialEq)]
@@ -32,9 +33,9 @@ pub enum Expr {
 
 #[derive(Debug, PartialEq)]
 pub struct BinaryExpr {
-    left: Box<Expr>,
-    op: Operator,
-    right: Box<Expr>,
+    pub left: Box<Expr>,
+    pub op: Operator,
+    pub right: Box<Expr>,
 }
 
 impl BinaryExpr {
@@ -73,16 +74,36 @@ impl VariableDeclaration {
 #[derive(Debug, PartialEq)]
 pub struct AssignExpr {
     op: Operator,
-    left: Identifier,
+    left: Box<Expr>,
     right: Box<Expr>,
 }
 
 impl AssignExpr {
-    pub fn new(op: Operator, left: Identifier, right: Expr) -> Self {
+    pub fn new(op: Operator, left: Expr, right: Expr) -> Self {
         Self {
             op,
-            left,
+            left: Box::new(left),
             right: Box::new(right),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct IfStatement {
+    test: Box<Expr>,
+    consequent: Box<Statement>,
+    alternate: Option<Box<Statement>>,
+}
+
+impl IfStatement {
+    pub fn new(test: Expr, consequent: Statement, alternate: Option<Statement>) -> Self {
+        Self {
+            test: Box::new(test),
+            consequent: Box::new(consequent),
+            alternate: match alternate {
+                Some(stmt) => Some(Box::new(stmt)),
+                None => None,
+            },
         }
     }
 }

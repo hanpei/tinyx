@@ -9,39 +9,8 @@ use super::parser::Parser;
 
 impl<'a> Parser<'a> {
     /**
-     *  AssignmentExpression
-     *      : AdditiveExpression
-     *      : AdditiveExpression (ASSIGN AdditiveExpression)?
-     */
-    pub(super) fn parse_assign_expr(&mut self) -> ParseResult<Expr> {
-        let left = self.parse_additive_expr()?;
-        match self.current_token.kind {
-            TokenKind::Operator(Operator::Assign) => {
-                let op_loc = self.current_token.loc;
-                self.consume();
-                let right = self.parse_additive_expr()?;
-                match left {
-                    Expr::Identifier(ident) => Ok(Expr::Assign(AssignExpr::new(
-                        Operator::Assign,
-                        ident,
-                        right,
-                    ))),
-                    _ => {
-                        return Err(Error::invalid_assignment(
-                            self.tokenizer.filename,
-                            op_loc.start,
-                        ));
-                    }
-                }
-            }
-            _ => Ok(left),
-        }
-    }
-    /**
      *  Expression
-     *      : AdditiveExpression
-     *      : ... todo
-     *      ;
+     *      : AssignmentExpression
      */
     pub(super) fn parse_expression(&mut self) -> ParseResult<Expr> {
         self.parse_assign_expr()
@@ -49,11 +18,65 @@ impl<'a> Parser<'a> {
     }
 
     /**
-     *  AdditiveExpression
-     *      : MultiplicativeExpression
-     *      : AdditiveExpression OP Literal -> Literal OP Literal Op Literal ...
-     *      ;
+     *  AssignmentExpression
+     *      : AdditiveExpression
+     *      | LeftHandSideExpression ASSIGN AssignmentExpression
      */
+    pub(super) fn parse_assign_expr(&mut self) -> ParseResult<Expr> {
+        let left = self.parse_relational_expr()?;
+
+        if TokenKind::Operator(Operator::Assign) != self.current_token.kind {
+            return Ok(left);
+        }
+
+        let op = Operator::from_str(&self.current_token.raw);
+        let op_loc = self.current_token.loc;
+        self.consume();
+
+        match left {
+            Expr::Identifier(ident) => Ok(Expr::Assign(AssignExpr::new(
+                op,
+                Expr::Identifier(ident),
+                self.parse_assign_expr()?,
+            ))),
+            _ => {
+                return Err(Error::invalid_assignment(
+                    self.tokenizer.filename,
+                    op_loc.start,
+                ));
+            }
+        }
+    }
+
+    /**
+     * RelationalExpression
+     *      : AdditiveExpression ( RelationalOperator AdditiveExpression )*?
+     *
+     * RelationalOperator
+     *      : ( "<" | "<=" | ">" | ">=" | "==" | "!=" )
+     */
+
+    pub(super) fn parse_relational_expr(&mut self) -> ParseResult<Expr> {
+        let mut left = self.parse_additive_expr()?;
+        while self.expect_token_is(TokenKind::Operator(Operator::LessThan))
+            || self.expect_token_is(TokenKind::Operator(Operator::LessThanEqual))
+            || self.expect_token_is(TokenKind::Operator(Operator::GreaterThan))
+            || self.expect_token_is(TokenKind::Operator(Operator::GreaterThanEqual))
+            || self.expect_token_is(TokenKind::Operator(Operator::Equal))
+            || self.expect_token_is(TokenKind::Operator(Operator::NotEqual))
+        {
+            let op = Operator::from_str(&self.current_token.raw);
+            self.consume();
+            let right = self.parse_additive_expr()?;
+            left = Expr::Binary(BinaryExpr::new(left, op, right));
+        }
+        Ok(left)
+    }
+
+    /**
+    *  AdditiveExpression
+           :MultiplicativeExpression ((ADD|MIN) MultiplicativeExpression)*
+    */
     pub(super) fn parse_additive_expr(&mut self) -> ParseResult<Expr> {
         let mut left = self.parse_mul_expr()?;
         while self.current_token.kind == TokenKind::Operator(Operator::Add)
@@ -66,11 +89,10 @@ impl<'a> Parser<'a> {
         }
         Ok(left)
     }
+
     /**
      *  MultiplicativeExpression
-     *      : PrimaryExpression
-     *      : MultiplicativeExpression OP PrimaryExpression -> PrimaryExpression OP PrimaryExpression Op PrimaryExpression ...
-     *      ;
+     *      : PrimaryExpression ((MUL|DIV) PrimaryExpression)*
      */
     pub(super) fn parse_mul_expr(&mut self) -> ParseResult<Expr> {
         let mut left = self.parse_primary_expr()?;
@@ -88,15 +110,15 @@ impl<'a> Parser<'a> {
     /**
      * PrimaryExpression
      *      : Literal
-     *      ：ParenthesizedExpression
+     *      | ParenthesizedExpression
      *      | Identifier
      *      ;
      */
     fn parse_primary_expr(&mut self) -> ParseResult<Expr> {
         match self.current_token.kind {
-            TokenKind::Number(_) | TokenKind::String => self.parse_literal(),
+            TokenKind::Number | TokenKind::String => self.parse_literal(),
             TokenKind::Identifier => self.parse_identifier_expr(),
-            TokenKind::BracketOpen => self.parse_parenthesized_expr(),
+            TokenKind::ParenOpen => self.parse_parenthesized_expr(),
             _ => Err(Error::invalid_token(
                 self.tokenizer.filename,
                 self.current_token.loc.start,
@@ -111,11 +133,9 @@ impl<'a> Parser<'a> {
      *   ;
      */
     fn parse_parenthesized_expr(&mut self) -> ParseResult<Expr> {
-        self.expect(TokenKind::BracketOpen)?;
-        self.consume();
+        self.eat(TokenKind::ParenOpen)?;
         let expr = self.parse_expression()?;
-        self.expect(TokenKind::BracketClose)?;
-        self.consume();
+        self.eat(TokenKind::ParenClose)?;
         Ok(expr)
     }
 
@@ -129,7 +149,7 @@ impl<'a> Parser<'a> {
      */
     fn parse_literal(&mut self) -> ParseResult<Expr> {
         match self.current_token.kind {
-            TokenKind::Number(n) => self.parse_number(n),
+            TokenKind::Number => self.parse_number(),
             TokenKind::Identifier => todo!(),
             TokenKind::String => self.parse_string(),
             _ => unreachable!("{:?}", self.current_token.kind),

@@ -1,6 +1,5 @@
 use crate::error::Error;
-use crate::lexer::Pos;
-use crate::token::TokenKind;
+use crate::token::{Pos, TokenKind};
 use crate::{ast::*, ParseResult};
 use crate::{lexer::Lexer, token::Token};
 
@@ -57,7 +56,7 @@ impl<'a> Parser<'a> {
             _ => match self.current_token.kind {
                 TokenKind::Eol => self.consume(),
                 _ => {
-                    return Err(Error::missing_semi(
+                    return Err(Error::invalid_token(
                         self.tokenizer.filename,
                         self.current_token.loc.start,
                     ))
@@ -88,7 +87,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub(super) fn next_token_is(&mut self, expect_kind: TokenKind) -> bool {
+    pub(super) fn expect_token_is(&mut self, expect_kind: TokenKind) -> bool {
         let kind = &self.current_token.kind;
         kind == &expect_kind
     }
