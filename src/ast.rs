@@ -19,7 +19,9 @@ pub enum Statement {
     Block(Vec<Statement>),
     Empty,
     VariableDeclaration(VariableDeclaration),
-    IfStatement(IfStatement),
+    FunctionDeclaration(FunctionDeclaration),
+    If(IfStatement),
+    Return(ReturnStatement),
 }
 
 #[derive(Debug, PartialEq)]
@@ -103,6 +105,39 @@ impl IfStatement {
             consequent: Box::new(consequent),
             alternate: match alternate {
                 Some(stmt) => Some(Box::new(stmt)),
+                None => None,
+            },
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct FunctionDeclaration {
+    id: Identifier,
+    params: Option<Vec<Identifier>>,
+    body: Box<Statement>,
+}
+
+impl FunctionDeclaration {
+    pub fn new(id: Identifier, params: Option<Vec<Identifier>>, body: Statement) -> Self {
+        Self {
+            id,
+            params,
+            body: Box::new(body),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ReturnStatement {
+    argument: Option<Box<Expr>>,
+}
+
+impl ReturnStatement {
+    pub fn new(argument: Option<Expr>) -> Self {
+        Self {
+            argument: match argument {
+                Some(expr) => Some(Box::new(expr)),
                 None => None,
             },
         }

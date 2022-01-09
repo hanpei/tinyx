@@ -57,7 +57,7 @@ impl<'a> Parser<'a> {
             _ => {
                 println!("expect_end_with_semi err");
                 self.log();
-                return Err(Error::invalid_token(
+                return Err(Error::missing_semi(
                     self.tokenizer.filename,
                     self.current_token.loc.start,
                 ));
@@ -96,17 +96,6 @@ impl<'a> Parser<'a> {
     pub fn parse(&mut self) -> ParseResult<Ast> {
         let node = self.parse_program()?;
         Ok(node)
-    }
-
-    pub(super) fn skip_eol(&mut self) {
-        loop {
-            if self.current_token.kind == TokenKind::Eol {
-                println!("eeeeeeol");
-                self.consume();
-            } else {
-                break;
-            }
-        }
     }
 
     /**

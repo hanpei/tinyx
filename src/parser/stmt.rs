@@ -1,5 +1,5 @@
 use crate::{
-    ast::{IfStatement, Statement, VariableDeclaration},
+    ast::{FunctionDeclaration, IfStatement, ReturnStatement, Statement, VariableDeclaration},
     error::Error,
     token::{Keyword, Operator, TokenKind},
     ParseResult,
@@ -32,6 +32,8 @@ impl<'a> Parser<'a> {
      *      | VariableStatement
      *      | EmptyStatement
      *      | IfStatement
+     *      | FunctionDeclaration
+     *      | ReturnStatement
      *      ;
      *      ...
      */
@@ -46,6 +48,8 @@ impl<'a> Parser<'a> {
             TokenKind::Identifier => self.parse_expression_stmt(),
             TokenKind::Keyword(Keyword::Let) => self.parse_variable_stmt(),
             TokenKind::Keyword(Keyword::If) => self.parse_if_stmt(),
+            TokenKind::Keyword(Keyword::Fn) => self.parse_fn_declaration_stmt(),
+            TokenKind::Keyword(Keyword::Return) => self.parse_return_stmt(),
             _ => {
                 println!("parse_statment error token: ");
                 self.log();
@@ -151,6 +155,64 @@ impl<'a> Parser<'a> {
         };
 
         let if_stmt = IfStatement::new(test, consequent, alternate);
-        Ok(Statement::IfStatement(if_stmt))
+        Ok(Statement::If(if_stmt))
+    }
+
+    /**
+     *  FunctionDeclaration
+     *      : "function" Identifier ( "(" ( FormalParameterList )? ")" ) FunctionBody
+     *
+     *  FormalParameterList
+     *      : Identifier ( "," Identifier )*
+     *
+     *  FunctionBody
+     *      : "{" ( Statement )? "}"
+     */
+    fn parse_fn_declaration_stmt(&mut self) -> ParseResult<Statement> {
+        self.eat(TokenKind::Keyword(Keyword::Fn))?;
+        let id = self.parse_identifier()?;
+        self.eat(TokenKind::ParenOpen)?;
+
+        let mut ids = Vec::new();
+        let params = if self.current_token.kind != TokenKind::ParenClose {
+            loop {
+                let id = self.parse_identifier()?;
+                ids.push(id);
+                if self.token_is(TokenKind::Comma) {
+                    self.consume();
+                } else {
+                    break;
+                }
+            }
+            Some(ids)
+        } else {
+            None
+        };
+        self.eat(TokenKind::ParenClose)?;
+        let body = self.parse_block_stmt()?;
+        let stmt = FunctionDeclaration::new(id, params, body);
+        Ok(Statement::FunctionDeclaration(stmt))
+    }
+
+    /**
+     *  ReturnStatement
+     *      : "return" ( Expression )? ( ";" )?
+     */
+    fn parse_return_stmt(&mut self) -> ParseResult<Statement> {
+        self.eat(TokenKind::Keyword(Keyword::Return))?;
+
+        if !self.token_is(TokenKind::Semi)
+            && !self.token_is(TokenKind::Eol)
+            && !self.token_is(TokenKind::BraceClose)
+        {
+            let expr = self.parse_expression()?;
+            let stmt = ReturnStatement::new(Some(expr));
+            self.expect_end_with_semi()?;
+            Ok(Statement::Return(stmt))
+        } else {
+            let stmt = ReturnStatement::new(None);
+            self.expect_end_with_semi()?;
+            Ok(Statement::Return(stmt))
+        }
     }
 }

@@ -74,6 +74,7 @@ impl<'a> Lexer<'a> {
                     b'+' | b'-' | b'*' | b'/' | b'=' | b'>' | b'<' | b'!' => {
                         self.read_operator(c, start)?
                     }
+                    b',' => Token::new(TokenKind::Comma, ",".to_string(), start, self.pos()),
                     b';' => Token::new(TokenKind::Semi, ";".to_string(), start, self.pos()),
                     b'{' => Token::new(TokenKind::BraceOpen, "{".to_string(), start, self.pos()),
                     b'}' => Token::new(TokenKind::BraceClose, "}".to_string(), start, self.pos()),

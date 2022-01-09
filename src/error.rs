@@ -36,10 +36,15 @@ impl Error {
         ))
     }
 
-    pub fn unexpected_token(file: &str, kind: &TokenKind, expect: &TokenKind, pos: Pos) -> Error {
+    pub fn unexpected_token(
+        file: &str,
+        current: &TokenKind,
+        expect: &TokenKind,
+        pos: Pos,
+    ) -> Error {
         Self::UnexpectedToken(format!(
-            "unexpected token: {}, expect is {} at {}:{}:{}",
-            kind,
+            "unexpected token: {}, expected {} at {}:{}:{}",
+            current,
             expect,
             file,
             pos.ln,

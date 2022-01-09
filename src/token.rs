@@ -54,6 +54,7 @@ pub enum TokenKind {
     Boolean,
     Operator(Operator),
     Semi,
+    Comma,
     None,
     BraceOpen,
     BraceClose,
@@ -79,6 +80,7 @@ impl std::fmt::Display for TokenKind {
             TokenKind::ParenClose => write!(f, "ParenClose"),
             TokenKind::Keyword(key) => write!(f, "Keyword::{}", key),
             TokenKind::Boolean => write!(f, "Boolean"),
+            TokenKind::Comma => write!(f, "Comma"),
         }
     }
 }
@@ -88,6 +90,8 @@ pub enum Keyword {
     Let,
     If,
     Else,
+    Fn,
+    Return,
 }
 
 impl std::fmt::Display for Keyword {
@@ -96,6 +100,8 @@ impl std::fmt::Display for Keyword {
             Keyword::Let => write!(f, "Let"),
             Keyword::If => write!(f, "If"),
             Keyword::Else => write!(f, "Else"),
+            Keyword::Fn => write!(f, "Function"),
+            Keyword::Return => write!(f, "Return"),
         }
     }
 }
@@ -107,6 +113,8 @@ impl Keyword {
             "let" => Some(Let),
             "if" => Some(If),
             "else" => Some(Else),
+            "function" => Some(Fn),
+            "return" => Some(Return),
             _ => None,
         }
     }
