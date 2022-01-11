@@ -30,6 +30,7 @@ pub enum Expr {
     StringLiteral(String),
     BooleanLiteral(bool),
     Binary(BinaryExpr),
+    Unary(UnaryExpr),
     Identifier(Identifier),
     Assign(AssignExpr),
 }
@@ -47,6 +48,21 @@ impl BinaryExpr {
             left: Box::new(left),
             op,
             right: Box::new(right),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct UnaryExpr {
+    pub op: Operator,
+    pub argument: Box<Expr>,
+}
+
+impl UnaryExpr {
+    pub fn new(op: Operator, argument: Expr) -> Self {
+        Self {
+            op,
+            argument: Box::new(argument),
         }
     }
 }

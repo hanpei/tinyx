@@ -1,5 +1,7 @@
+use std::fmt::Binary;
+
 use crate::{
-    ast::{AssignExpr, BinaryExpr, Expr, Identifier},
+    ast::{AssignExpr, BinaryExpr, Expr, Identifier, UnaryExpr},
     error::Error,
     token::{Operator, TokenKind},
     ParseResult,
@@ -18,14 +20,34 @@ impl<'a> Parser<'a> {
     }
 
     /**
-     *  AssignmentExpression
-     *      : AdditiveExpression
-     *      | LeftHandSideExpression ASSIGN AssignmentExpression
+     *  EqualityExpression
+     *      : RelationalExpression ( ( "!=" | "==" ) RelationalExpression )*
+     *      ;
+     */
+    pub(super) fn parse_equality_expr(&mut self) -> ParseResult<Expr> {
+        let mut left = self.parse_relational_expr()?;
+        while self.expect_one_of(&[
+            TokenKind::Operator(Operator::Equal),
+            TokenKind::Operator(Operator::Equal),
+        ]) {
+            let op = Operator::from_str(&self.current_token.raw);
+            self.consume();
+            let right = self.parse_relational_expr()?;
+            left = Expr::Binary(BinaryExpr::new(left, op, right))
+        }
+        Ok(left)
+    }
+
+    /**
+     * AssignmentExpression:
+     *      : EqualityExpression
+     *      | IDENTIFIER "=" AssignmentExpression
+     *      ;
      */
     pub(super) fn parse_assign_expr(&mut self) -> ParseResult<Expr> {
-        let left = self.parse_relational_expr()?;
+        let left = self.parse_equality_expr()?;
 
-        if TokenKind::Operator(Operator::Assign) != self.current_token.kind {
+        if !self.token_is(TokenKind::Operator(Operator::Assign)) {
             return Ok(left);
         }
 
@@ -49,22 +71,31 @@ impl<'a> Parser<'a> {
     }
 
     /**
+     * LeftHandSideExpression
+     *      | todo..
+     */
+    pub(super) fn parse_left_hand_side_expr(&mut self) -> ParseResult<Expr> {
+        todo!()
+    }
+
+    /**
      * RelationalExpression
-     *      : AdditiveExpression ( RelationalOperator AdditiveExpression )*?
+     *      : AdditiveExpression ( RELATIONAL_OPERATOR AdditiveExpression )*?
      *
-     * RelationalOperator
+     * RELATIONAL_OPERATOR
      *      : ( "<" | "<=" | ">" | ">=" | "==" | "!=" )
      */
 
     pub(super) fn parse_relational_expr(&mut self) -> ParseResult<Expr> {
         let mut left = self.parse_additive_expr()?;
-        while self.token_is(TokenKind::Operator(Operator::LessThan))
-            || self.token_is(TokenKind::Operator(Operator::LessThanEqual))
-            || self.token_is(TokenKind::Operator(Operator::GreaterThan))
-            || self.token_is(TokenKind::Operator(Operator::GreaterThanEqual))
-            || self.token_is(TokenKind::Operator(Operator::Equal))
-            || self.token_is(TokenKind::Operator(Operator::NotEqual))
-        {
+        while self.expect_one_of(&[
+            TokenKind::Operator(Operator::LessThan),
+            TokenKind::Operator(Operator::LessThanEqual),
+            TokenKind::Operator(Operator::GreaterThan),
+            TokenKind::Operator(Operator::GreaterThanEqual),
+            TokenKind::Operator(Operator::Equal),
+            TokenKind::Operator(Operator::NotEqual),
+        ]) {
             let op = Operator::from_str(&self.current_token.raw);
             self.consume();
             let right = self.parse_additive_expr()?;
@@ -74,14 +105,16 @@ impl<'a> Parser<'a> {
     }
 
     /**
-    *  AdditiveExpression
-           :MultiplicativeExpression ((ADD|MIN) MultiplicativeExpression)*
-    */
+     *  AdditiveExpression
+     *      :MultiplicativeExpression ((ADD|MIN) MultiplicativeExpression)*
+     *      ;
+     */
     pub(super) fn parse_additive_expr(&mut self) -> ParseResult<Expr> {
         let mut left = self.parse_mul_expr()?;
-        while self.current_token.kind == TokenKind::Operator(Operator::Add)
-            || self.current_token.kind == TokenKind::Operator(Operator::Min)
-        {
+        while self.expect_one_of(&[
+            TokenKind::Operator(Operator::Add),
+            TokenKind::Operator(Operator::Min),
+        ]) {
             let op = Operator::from_str(&self.current_token.raw);
             self.consume();
             let right = self.parse_mul_expr()?;
@@ -92,19 +125,42 @@ impl<'a> Parser<'a> {
 
     /**
      *  MultiplicativeExpression
-     *      : PrimaryExpression ((MUL|DIV) PrimaryExpression)*
+     *      : UnaryExpression ((MUL|DIV) UnaryExpression)*
      */
     pub(super) fn parse_mul_expr(&mut self) -> ParseResult<Expr> {
-        let mut left = self.parse_primary_expr()?;
-        while self.current_token.kind == TokenKind::Operator(Operator::Mul)
-            || self.current_token.kind == TokenKind::Operator(Operator::Div)
-        {
+        let mut left = self.parse_unary_expr()?;
+        while self.expect_one_of(&[
+            TokenKind::Operator(Operator::Mul),
+            TokenKind::Operator(Operator::Div),
+        ]) {
             let op = Operator::from_str(&self.current_token.raw);
             self.consume();
-            let right = self.parse_primary_expr()?;
+            let right = self.parse_unary_expr()?;
             left = Expr::Binary(BinaryExpr::new(left, op, right));
         }
         Ok(left)
+    }
+
+    /**
+     *  UnaryExpression
+     *      : (+ | - | !) UnaryExpression
+     *      | PrimaryExpression
+     *      ;
+     */
+    pub(super) fn parse_unary_expr(&mut self) -> ParseResult<Expr> {
+        if self.expect_one_of(&[
+            TokenKind::Operator(Operator::Min),
+            TokenKind::Operator(Operator::Add),
+            TokenKind::Operator(Operator::Not),
+        ]) {
+            // self.parse_unary_expr()?;
+            let op = Operator::from_str(&self.current_token.raw);
+            self.consume();
+            let argument = self.parse_unary_expr()?;
+            return Ok(Expr::Unary(UnaryExpr::new(op, argument)));
+        }
+
+        self.parse_primary_expr()
     }
 
     /**

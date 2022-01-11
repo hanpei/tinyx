@@ -45,7 +45,7 @@ impl<'a> Parser<'a> {
 
     // statement结尾的情况';'  '\n'  ';\n'
     // 或者是在block中 最后一个是'}'
-    pub(super) fn expect_end_with_semi(&mut self) -> ParseResult<()> {
+    pub(super) fn expect_stmt_terminator(&mut self) -> ParseResult<()> {
         match self.current_token.kind {
             TokenKind::BraceClose => (),
             TokenKind::Eof => self.consume(),
@@ -65,6 +65,13 @@ impl<'a> Parser<'a> {
         }
 
         Ok(())
+    }
+
+    pub(super) fn is_stmt_end(&mut self) -> bool {
+        if self.expect_one_of(&[TokenKind::Semi, TokenKind::Eol, TokenKind::BraceClose]) {
+            return true;
+        }
+        return false;
     }
 
     pub(super) fn expect(&mut self, kind: TokenKind) -> ParseResult<()> {
@@ -93,6 +100,18 @@ impl<'a> Parser<'a> {
         kind == &expect_kind
     }
 
+    /**
+     * return true if one of tokenkind in the list
+     */
+    pub(super) fn expect_one_of(&mut self, kinds: &[TokenKind]) -> bool {
+        for kind in kinds {
+            if kind == &self.current_token.kind {
+                return true;
+            }
+        }
+        return false;
+    }
+
     pub fn parse(&mut self) -> ParseResult<Ast> {
         let node = self.parse_program()?;
         Ok(node)
@@ -100,7 +119,7 @@ impl<'a> Parser<'a> {
 
     /**
      *  Program  
-     *      : (StatementList)?
+     *      : StatementList EOF
      *      ;
      */
     fn parse_program(&mut self) -> ParseResult<Program> {

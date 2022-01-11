@@ -10,7 +10,7 @@ use super::parser::Parser;
 impl<'a> Parser<'a> {
     /**
      * StatementList
-     *      : (Statement)*
+     *      : Statement*
      *      ;
      */
     pub(super) fn parse_statement_list(&mut self) -> ParseResult<Vec<Statement>> {
@@ -29,11 +29,11 @@ impl<'a> Parser<'a> {
      *  Statement
      *      : ExpressionStatement
      *      | BlockStatement
-     *      | VariableStatement
      *      | EmptyStatement
      *      | IfStatement
-     *      | FunctionDeclaration
      *      | ReturnStatement
+     *      | VariableDeclarator
+     *      | FunctionDeclaration
      *      ;
      *      ...
      */
@@ -63,19 +63,26 @@ impl<'a> Parser<'a> {
 
     /**
      *  ExpressionStatement
-     *      : Expression (";" | "\n" | ";\n")?
+     *      : Expression STMT_END
+     *      ;
+     *
+     *  STMT_END:
+     *      : ";"
+     *      | "\n"
+     *      | ";\n"
+     *      | "}"
      *      ;
      */
     fn parse_expression_stmt(&mut self) -> ParseResult<Statement> {
         let expr = self.parse_expression()?;
-        self.expect_end_with_semi()?;
+        self.expect_stmt_terminator()?;
 
         Ok(Statement::ExprStmt(expr))
     }
 
     /**
      *  BlockStatement
-     *      : "{" ( StatementList )? "}"
+     *      : "{" StatementList "}"
      *      ;
      */
     fn parse_block_stmt(&mut self) -> ParseResult<Statement> {
@@ -104,14 +111,14 @@ impl<'a> Parser<'a> {
     }
 
     /**
-     *  VariableStatement
+     *  VariableDeclarator
      *      : "let" VariableDeclaration (";")?
      *      ;
      */
     fn parse_variable_stmt(&mut self) -> ParseResult<Statement> {
         self.eat(TokenKind::Keyword(Keyword::Let))?;
         let stmt = self.parse_variable_declaration()?;
-        self.expect_end_with_semi()?;
+        self.expect_stmt_terminator()?;
         Ok(stmt)
     }
 
@@ -147,11 +154,12 @@ impl<'a> Parser<'a> {
         self.eat(TokenKind::ParenClose)?;
 
         let consequent = self.parse_statment()?;
-        let alternate = if self.token_is(TokenKind::Keyword(Keyword::Else)) {
+
+        let alternate = if let Ok(()) = self.expect_stmt_terminator() {
+            None
+        } else {
             self.eat(TokenKind::Keyword(Keyword::Else))?;
             Some(self.parse_statment()?)
-        } else {
-            None
         };
 
         let if_stmt = IfStatement::new(test, consequent, alternate);
@@ -196,23 +204,18 @@ impl<'a> Parser<'a> {
 
     /**
      *  ReturnStatement
-     *      : "return" ( Expression )? ( ";" )?
+     *      : "return" Expression? STMT_END
      */
     fn parse_return_stmt(&mut self) -> ParseResult<Statement> {
         self.eat(TokenKind::Keyword(Keyword::Return))?;
 
-        if !self.token_is(TokenKind::Semi)
-            && !self.token_is(TokenKind::Eol)
-            && !self.token_is(TokenKind::BraceClose)
-        {
-            let expr = self.parse_expression()?;
-            let stmt = ReturnStatement::new(Some(expr));
-            self.expect_end_with_semi()?;
-            Ok(Statement::Return(stmt))
+        let argument = if !self.is_stmt_end() {
+            Some(self.parse_expression()?)
         } else {
-            let stmt = ReturnStatement::new(None);
-            self.expect_end_with_semi()?;
-            Ok(Statement::Return(stmt))
-        }
+            None
+        };
+        let stmt = ReturnStatement::new(argument);
+        self.expect_stmt_terminator()?;
+        Ok(Statement::Return(stmt))
     }
 }
