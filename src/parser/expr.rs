@@ -62,10 +62,7 @@ impl<'a> Parser<'a> {
                 self.parse_assign_expr()?,
             ))),
             _ => {
-                return Err(Error::invalid_assignment(
-                    self.tokenizer.filename,
-                    op_loc.start,
-                ));
+                return Err(Error::invalid_assignment(self.lexer.filename, op_loc.start));
             }
         }
     }
@@ -179,7 +176,7 @@ impl<'a> Parser<'a> {
                 println!("parse_primary_expr error");
                 self.log();
                 return Err(Error::invalid_token(
-                    self.tokenizer.filename,
+                    self.lexer.filename,
                     self.current_token.loc.start,
                 ));
             } // _ => unimplemented!(),

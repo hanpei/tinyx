@@ -4,15 +4,16 @@ use crate::{ast::*, ParseResult};
 use crate::{lexer::Lexer, token::Token};
 
 pub struct Parser<'a> {
-    pub tokenizer: Lexer<'a>,
+    pub lexer: Lexer<'a>,
     pub ast: Ast,
     pub current_token: Token,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(source: &'a str, filename: &'a str) -> Self {
+    pub fn new(lexer: Lexer<'a>) -> Self {
         Self {
-            tokenizer: Lexer::new(source.as_bytes(), filename),
+            lexer,
+            // lexer: Lexer::new(source.as_bytes(), filename),
             ast: Program::new(Vec::new()),
             current_token: Token::new(
                 TokenKind::None,
@@ -24,7 +25,7 @@ impl<'a> Parser<'a> {
     }
 
     fn next_token(&mut self) -> ParseResult<Token> {
-        self.tokenizer.next()
+        self.lexer.next()
     }
 
     pub(super) fn consume(&mut self) {
@@ -58,7 +59,7 @@ impl<'a> Parser<'a> {
                 println!("expect_end_with_semi err");
                 self.log();
                 return Err(Error::missing_semi(
-                    self.tokenizer.filename,
+                    self.lexer.filename,
                     self.current_token.loc.start,
                 ));
             }
@@ -79,7 +80,7 @@ impl<'a> Parser<'a> {
             ty if ty == &kind => Ok(()),
             _ => {
                 return Err(Error::unexpected_token(
-                    self.tokenizer.filename,
+                    self.lexer.filename,
                     &self.current_token.kind,
                     &kind,
                     self.current_token.loc.start,

@@ -54,7 +54,7 @@ impl<'a> Parser<'a> {
                 println!("parse_statment error token: ");
                 self.log();
                 return Err(Error::invalid_token(
-                    self.tokenizer.filename,
+                    self.lexer.filename,
                     self.current_token.loc.start,
                 ));
             }

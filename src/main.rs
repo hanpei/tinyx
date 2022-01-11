@@ -3,7 +3,7 @@ use std::{
     io::{BufReader, Read},
 };
 
-use tinyx::{lexer::Lexer, parser::parser::Parser};
+use tinyx::{evaluator::Evaluator, lexer::Lexer, parser::parser::Parser};
 
 fn main() {
     let file = File::open("source.txt").unwrap();
@@ -12,17 +12,19 @@ fn main() {
     buf_reader.read_to_string(&mut contents).unwrap();
 
     println!("\n------- TOKEN START -----------\n");
-    let mut lexer = Lexer::new(&contents.as_bytes(), "source.txt");
-    lexer.log();
+    let mut lexer_for_log = Lexer::new(&contents.as_bytes(), "source.txt");
+    lexer_for_log.log();
     println!("\n-------TOKEN END -----------\n\n");
 
     println!("\n-------- AST START ----------\n");
-    let mut parser = Parser::new(&contents, "source.txt");
+    let lexer = Lexer::new(&contents.as_bytes(), "source.txt");
+    let mut parser = Parser::new(lexer);
     let ast = parser.parse();
     println!("{:#?}", ast);
     println!("\n-------- AST END -----------\n\n");
 
-    // println!("\n------ INTERPRETER START ------------\n");
-    // evaluator::Evaluator::eval();
-    // println!("\n------- INTERPRETER END -----------\n\n");
+    println!("\n------ INTERPRETER START ------------\n");
+    let mut evaluator = Evaluator::new();
+    evaluator.eval(&ast.unwrap());
+    println!("\n------- INTERPRETER END -----------\n\n");
 }

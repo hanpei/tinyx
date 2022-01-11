@@ -103,9 +103,18 @@ impl<'a> Lexer<'a> {
     fn read_number(&mut self, first: u8, start: Pos) -> ParseResult<Token> {
         let mut buf = String::new();
         buf.push(first as char);
+        let mut has_point = false;
         while let Some(c) = self.peek() {
             match c {
                 b'0'..=b'9' => buf.push(c as char),
+                b'.' => {
+                    if !has_point {
+                        has_point = true;
+                        buf.push('.')
+                    } else {
+                        return Err(Error::invalid_charactor(self.filename, '.', self.pos()));
+                    }
+                }
                 _ => break,
             }
             self.next_byte();

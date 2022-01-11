@@ -18,7 +18,7 @@ impl<'a> Parser<'a> {
                 Ok(Expr::NumericLiteral(n))
             }
             Err(_e) => Err(Error::parse_number_error(
-                self.tokenizer.filename,
+                self.lexer.filename,
                 self.current_token.loc.start,
             )),
         }
@@ -41,7 +41,7 @@ impl<'a> Parser<'a> {
             println!("parse_boolean error");
             self.log();
             return Err(Error::invalid_token(
-                self.tokenizer.filename,
+                self.lexer.filename,
                 self.current_token.loc.start,
             ));
         };

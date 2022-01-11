@@ -1,5 +1,6 @@
 use crate::{
     ast::{BinaryExpr, Expr, Identifier, Program, Statement, VariableDeclaration},
+    lexer::Lexer,
     parser::parser::Parser,
     token::Operator,
     ParseResult,
@@ -31,7 +32,7 @@ fn test_block_statment() -> ParseResult<()> {
         }"#,
     ];
     for s in slist.iter() {
-        let mut program = Parser::new(s, "");
+        let mut program = Parser::new(Lexer::new(s.as_bytes(), "source.txt"));
         program.parse()?;
     }
     Ok(())
@@ -48,7 +49,7 @@ fn test_statment_list() {
     3;4
 "#;
 
-    let mut program = Parser::new(s, "");
+    let mut program = Parser::new(Lexer::new(s.as_bytes(), "source.txt"));
     program.parse().unwrap();
 }
 
@@ -58,7 +59,7 @@ fn test_binary_expr() {
     1+2*3
 "#;
 
-    let mut program = Parser::new(s, "");
+    let mut program = Parser::new(Lexer::new(s.as_bytes(), "source.txt"));
     let ast = program.parse().unwrap();
     // println!("{:#?}", ast);
     let right = BinaryExpr::new(
@@ -81,7 +82,7 @@ fn test_binary_expr_parenparentheses() {
     (1+2)*3
 "#;
 
-    let mut program = Parser::new(s, "");
+    let mut program = Parser::new(Lexer::new(s.as_bytes(), "source.txt"));
     let ast = program.parse().unwrap();
     println!("{:#?}", ast);
     let b1 = BinaryExpr::new(
@@ -102,7 +103,7 @@ fn test_let_stmt() {
     let b = 1+2
 "#;
 
-    let mut program = Parser::new(s, "");
+    let mut program = Parser::new(Lexer::new(s.as_bytes(), "source.txt"));
     let ast = program.parse().unwrap();
     println!("{:#?}", ast);
 
