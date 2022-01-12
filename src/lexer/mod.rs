@@ -30,7 +30,7 @@ impl<'a> Lexer<'a> {
         Pos::new(self.ln, self.col - 1)
     }
 
-    fn next_byte(&mut self) -> Option<u8> {
+    fn advance(&mut self) -> Option<u8> {
         if self.is_eof() {
             return None;
         }
@@ -40,7 +40,7 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn is_eof(&mut self) -> bool {
-        self.cursor == self.source.len()
+        self.cursor >= self.source.len()
     }
 
     fn next_pos(&mut self) {
@@ -63,14 +63,21 @@ impl<'a> Lexer<'a> {
     pub fn next(&mut self) -> ParseResult<Token> {
         self.skip_whitespace();
         let start = self.pos();
-        match self.next_byte() {
+        match self.advance() {
             Some(c) => {
                 return Ok(match c {
                     b'0'..=b'9' => self.read_number(c, start)?,
                     b'\r' | b'\n' => self.read_eol(start),
                     b'"' => self.read_string(c, start)?,
                     b'a'..=b'z' | b'A'..=b'Z' => self.read_identifier(c, start)?,
-                    b'+' | b'-' | b'*' | b'/' | b'=' | b'>' | b'<' | b'!' => {
+                    b'/' => {
+                        if Some(b'/') == self.peek() {
+                            self.skip_comment()?
+                        } else {
+                            self.read_operator(c, start)?
+                        }
+                    }
+                    b'+' | b'-' | b'*' | b'=' | b'>' | b'<' | b'!' => {
                         self.read_operator(c, start)?
                     }
                     b',' => Token::new(TokenKind::Comma, ",".to_string(), start, self.pos()),
@@ -83,7 +90,7 @@ impl<'a> Lexer<'a> {
                         return Err(ParserError::invalid_charactor(
                             self.filename,
                             c as char,
-                            self.pos(),
+                            start,
                         ));
                     }
                 })
@@ -120,16 +127,17 @@ impl<'a> Lexer<'a> {
                 }
                 _ => break,
             }
-            self.next_byte();
+            self.advance();
         }
         Ok(Token::new(TokenKind::Number, buf, start, self.pos()))
     }
 
     fn read_string(&mut self, _c: u8, start: Pos) -> ParseResult<Token> {
         let mut buf = vec![];
-        while let Some(c) = self.next_byte() {
+        while let Some(c) = self.advance() {
             match c {
                 b'"' => break,
+                b'\n' => self.newline(),
                 _ => buf.push(c),
             }
         }
@@ -147,7 +155,7 @@ impl<'a> Lexer<'a> {
                 b'a'..=b'z' | b'A'..=b'Z' => buf.push(c as char),
                 _ => break,
             }
-            self.next_byte();
+            self.advance();
         }
 
         if &buf == "true" || &buf == "false" {
@@ -173,7 +181,7 @@ impl<'a> Lexer<'a> {
                 if self.peek() == Some(b'=') {
                     buf.push(x as char);
                     buf.push('=');
-                    self.next_byte();
+                    self.advance();
                 } else {
                     buf.push(x as char)
                 }
@@ -185,7 +193,29 @@ impl<'a> Lexer<'a> {
         Ok(Token::new(TokenKind::Operator(op), buf, start, self.pos()))
     }
 
-    // 多个空行，仅返回一个\n，用来判断auto semi insertion
+    fn skip_comment(&mut self) -> ParseResult<Token> {
+        while let Some(c) = self.peek() {
+            match c {
+                b'\n' | b'\r' => break,
+                _ => self.advance(),
+            };
+        }
+        println!("1111111");
+        self.next()
+    }
+
+    fn skip_whitespace(&mut self) {
+        while let Some(c) = self.peek() {
+            match c {
+                b' ' | b'\t' => {
+                    self.advance();
+                }
+                _ => break,
+            }
+        }
+    }
+
+    // 多个空行，仅返回一个\n，用来判断statement end
     fn read_eol(&mut self, start: Pos) -> Token {
         self.newline();
 
@@ -193,7 +223,7 @@ impl<'a> Lexer<'a> {
             match c {
                 b'\n' | b'\r' => {
                     self.newline();
-                    self.next_byte();
+                    self.advance();
                 }
                 _ => break,
             }
@@ -216,17 +246,6 @@ impl<'a> Lexer<'a> {
                     eprintln!("{:?}", e);
                     break;
                 }
-            }
-        }
-    }
-
-    fn skip_whitespace(&mut self) {
-        while let Some(c) = self.peek() {
-            match c {
-                b' ' | b'\t' => {
-                    self.next_byte();
-                }
-                _ => break,
             }
         }
     }

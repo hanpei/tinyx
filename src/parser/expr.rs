@@ -1,6 +1,7 @@
 use crate::{
     ast::{AssignExpr, BinaryExpr, Expr, Identifier, UnaryExpr},
     error::ParserError,
+    position::Span,
     token::{Operator, TokenKind},
     ParseResult,
 };
@@ -57,7 +58,7 @@ impl<'a> Parser<'a> {
         match left {
             Expr::Identifier(ident) => Ok(Expr::Assign(AssignExpr::new(
                 op,
-                Expr::Identifier(ident),
+                ident,
                 self.parse_assign_expr()?,
             ))),
             _ => {
@@ -234,7 +235,10 @@ impl<'a> Parser<'a> {
     pub fn parse_identifier(&mut self) -> ParseResult<Identifier> {
         self.expect(TokenKind::Identifier)?;
         let name = self.current_token.raw.to_string();
-        let expr = Identifier::new(name);
+        let expr = Identifier::new(
+            name,
+            Span::new(self.lexer.filename.into(), self.current_token.loc),
+        );
         self.consume();
         Ok(expr)
     }

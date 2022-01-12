@@ -22,14 +22,14 @@ impl Loc {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Span<T> {
-    pub value: T,
+#[derive(Debug, Clone, PartialEq)]
+pub struct Span {
+    pub filename: String,
     pub loc: Loc,
 }
 
-impl<T> Span<T> {
-    pub fn new(value: T, loc: Loc) -> Self {
-        Self { value, loc }
+impl Span {
+    pub fn new(filename: String, loc: Loc) -> Self {
+        Self { filename, loc }
     }
 }

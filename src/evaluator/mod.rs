@@ -58,7 +58,7 @@ impl Evaluator {
 
     fn eval_var_decl(&mut self, stmt: VariableDeclaration) -> EvalResult {
         let VariableDeclaration { id, init } = stmt;
-        let Identifier { name } = id;
+        let Identifier { name, .. } = id;
         let value = match init {
             Some(expr) => self.eval_expr(expr)?,
             None => Value::Null,
@@ -69,7 +69,7 @@ impl Evaluator {
 
     fn eval_expr(&mut self, expr: Expr) -> EvalResult {
         match expr {
-            Expr::NumericLiteral(n) => Ok(Value::Float(n)),
+            Expr::NumericLiteral(n) => Ok(Value::Float(n.value)),
             Expr::StringLiteral(s) => Ok(Value::String(s.value.to_string())),
             Expr::BooleanLiteral(_) => todo!(),
             Expr::Binary(binary) => self.eval_binary_expr(binary),
@@ -87,6 +87,7 @@ impl Evaluator {
         match (left, right) {
             (Value::Float(l), Value::Float(r)) => self.eval_arithmatic(op, l, r),
             (Value::String(l), Value::String(r)) => self.eval_string_concat(op, l, r),
+
             _ => unimplemented!(),
         }
     }
@@ -120,32 +121,27 @@ impl Evaluator {
     }
 
     fn eval_identifier(&mut self, ident: Identifier) -> EvalResult {
-        let Identifier { name } = ident;
+        let Identifier { name, span } = ident;
         match self.env.lookup(&name) {
             Some(value) => Ok(value.clone()),
-            None => return Err(EvalError::ReferenceError(name)),
+            None => return Err(EvalError::ReferenceError(name, span)),
         }
     }
 
     fn eval_assign(&mut self, expr: AssignExpr) -> EvalResult {
         let AssignExpr { op, left, right } = expr;
         match op {
-            Operator::Assign => match *left {
-                Expr::Identifier(ident) => {
-                    let Identifier { name } = ident;
-                    match self.env.lookup(&name) {
-                        Some(_) => {
-                            let value = self.eval_expr(*right)?;
-                            self.env.define(name, value.clone());
-                            Ok(value)
-                        }
-                        None => return Err(EvalError::ReferenceError(name)),
+            Operator::Assign => {
+                let Identifier { name, span } = *left;
+                match self.env.lookup(&name) {
+                    Some(_) => {
+                        let value = self.eval_expr(*right)?;
+                        self.env.assign(&name, value.clone());
+                        Ok(value)
                     }
+                    None => return Err(EvalError::ReferenceError(name, span)),
                 }
-                _ => Err(EvalError::SyntaxError(
-                    "Invalid left-hand side in assignment".into(),
-                )),
-            },
+            }
             _ => unimplemented!(),
         }
     }

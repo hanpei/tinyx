@@ -1,4 +1,4 @@
-use crate::{position::Loc, token::Operator};
+use crate::{position::Span, token::Operator};
 
 pub type Ast = Program;
 
@@ -26,7 +26,7 @@ pub enum Statement {
 
 #[derive(Debug, PartialEq)]
 pub enum Expr {
-    NumericLiteral(f64),
+    NumericLiteral(NumericLiteral),
     StringLiteral(StringLiteral),
     BooleanLiteral(bool),
     Binary(BinaryExpr),
@@ -38,12 +38,24 @@ pub enum Expr {
 #[derive(Debug, PartialEq)]
 pub struct StringLiteral {
     pub value: String,
-    pub loc: Loc,
+    pub span: Span,
 }
 
 impl StringLiteral {
-    pub fn new(value: String, loc: Loc) -> Self {
-        Self { value, loc }
+    pub fn new(value: String, span: Span) -> Self {
+        Self { value, span }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct NumericLiteral {
+    pub value: f64,
+    pub span: Span,
+}
+
+impl NumericLiteral {
+    pub fn new(value: f64, span: Span) -> Self {
+        Self { value, span }
     }
 }
 
@@ -82,11 +94,12 @@ impl UnaryExpr {
 #[derive(Debug, PartialEq)]
 pub struct Identifier {
     pub name: String,
+    pub span: Span,
 }
 
 impl Identifier {
-    pub fn new(name: String) -> Self {
-        Self { name }
+    pub fn new(name: String, span: Span) -> Self {
+        Self { name, span }
     }
 }
 
@@ -105,12 +118,12 @@ impl VariableDeclaration {
 #[derive(Debug, PartialEq)]
 pub struct AssignExpr {
     pub op: Operator,
-    pub left: Box<Expr>,
+    pub left: Box<Identifier>,
     pub right: Box<Expr>,
 }
 
 impl AssignExpr {
-    pub fn new(op: Operator, left: Expr, right: Expr) -> Self {
+    pub fn new(op: Operator, left: Identifier, right: Expr) -> Self {
         Self {
             op,
             left: Box::new(left),

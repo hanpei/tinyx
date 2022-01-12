@@ -1,4 +1,7 @@
-use crate::{position::Pos, token::TokenKind};
+use crate::{
+    position::{Loc, Pos, Span},
+    token::TokenKind,
+};
 
 #[derive(Debug)]
 pub enum ParserError {
@@ -14,7 +17,7 @@ pub enum ParserError {
 impl ParserError {
     pub fn invalid_charactor(file: &str, c: char, pos: Pos) -> ParserError {
         Self::InvalidCharactor(format!(
-            "invalid character {} at {}:{}:{})",
+            "invalid character '{}' at {}:{}:{})",
             c, file, pos.ln, pos.col
         ))
     }
@@ -71,16 +74,18 @@ impl ParserError {
 
 pub enum EvalError {
     SyntaxError(String),
-    ReferenceError(String),
+    ReferenceError(String, Span),
 }
 
 impl std::fmt::Display for EvalError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             EvalError::SyntaxError(msg) => write!(f, "Syntax Error: {}", msg),
-            EvalError::ReferenceError(variabale) => {
-                write!(f, "ReferenceError: {} is not defined", variabale)
-            }
+            EvalError::ReferenceError(variabale, span) => write!(
+                f,
+                "ReferenceError: {} is not defined, at: {}:{}:{}",
+                variabale, span.filename, span.loc.start.ln, span.loc.start.col
+            ),
         }
     }
 }

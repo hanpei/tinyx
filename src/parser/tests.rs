@@ -1,7 +1,8 @@
 use crate::{
-    ast::{BinaryExpr, Expr, Identifier, Program, Statement, VariableDeclaration},
+    ast::{BinaryExpr, Expr, Identifier, NumericLiteral, Program, Statement, VariableDeclaration},
     lexer::Lexer,
     parser::parser::Parser,
+    position::{Loc, Pos, Span},
     token::Operator,
     ParseResult,
 };
@@ -63,12 +64,30 @@ fn test_binary_expr() {
     let ast = program.parse().unwrap();
     // println!("{:#?}", ast);
     let right = BinaryExpr::new(
-        Expr::NumericLiteral(2.0),
+        Expr::NumericLiteral(NumericLiteral::new(
+            2.0,
+            Span::new(
+                "source.txt".to_string(),
+                Loc::new(Pos { ln: 2, col: 7 }, Pos { ln: 2, col: 8 }),
+            ),
+        )),
         Operator::Mul,
-        Expr::NumericLiteral(3.0),
+        Expr::NumericLiteral(NumericLiteral::new(
+            3.0,
+            Span::new(
+                "source.txt".to_string(),
+                Loc::new(Pos { ln: 2, col: 9 }, Pos { ln: 3, col: 0 }),
+            ),
+        )),
     );
     let binay = BinaryExpr::new(
-        Expr::NumericLiteral(1.0),
+        Expr::NumericLiteral(NumericLiteral::new(
+            1.0,
+            Span::new(
+                "source.txt".to_string(),
+                Loc::new(Pos { ln: 2, col: 5 }, Pos { ln: 2, col: 6 }),
+            ),
+        )),
         Operator::Add,
         Expr::Binary(right),
     );
@@ -86,11 +105,33 @@ fn test_binary_expr_parenparentheses() {
     let ast = program.parse().unwrap();
     println!("{:#?}", ast);
     let b1 = BinaryExpr::new(
-        Expr::NumericLiteral(1.0),
+        Expr::NumericLiteral(NumericLiteral::new(
+            1.0,
+            Span::new(
+                "source.txt".to_string(),
+                Loc::new(Pos { ln: 2, col: 6 }, Pos { ln: 2, col: 7 }),
+            ),
+        )),
         Operator::Add,
-        Expr::NumericLiteral(2.0),
+        Expr::NumericLiteral(NumericLiteral::new(
+            2.0,
+            Span::new(
+                "source.txt".to_string(),
+                Loc::new(Pos { ln: 2, col: 8 }, Pos { ln: 2, col: 9 }),
+            ),
+        )),
     );
-    let b2 = BinaryExpr::new(Expr::Binary(b1), Operator::Mul, Expr::NumericLiteral(3.0));
+    let b2 = BinaryExpr::new(
+        Expr::Binary(b1),
+        Operator::Mul,
+        Expr::NumericLiteral(NumericLiteral::new(
+            3.0,
+            Span::new(
+                "source.txt".to_string(),
+                Loc::new(Pos { ln: 2, col: 11 }, Pos { ln: 3, col: 0 }),
+            ),
+        )),
+    );
 
     let ret = Program::new(vec![Statement::ExprStmt(Expr::Binary(b2))]);
     assert_eq!(ast, ret);
@@ -109,15 +150,45 @@ fn test_let_stmt() {
 
     let ret = Program::new(vec![
         Statement::VariableDeclaration(VariableDeclaration::new(
-            Identifier::new("a".to_string()),
-            Some(Expr::NumericLiteral(1.0)),
+            Identifier::new(
+                "a".to_string(),
+                Span::new(
+                    "source.txt".to_string(),
+                    Loc::new(Pos { ln: 2, col: 8 }, Pos { ln: 2, col: 9 }),
+                ),
+            ),
+            Some(Expr::NumericLiteral(NumericLiteral::new(
+                1.0,
+                Span::new(
+                    "source.txt".to_string(),
+                    Loc::new(Pos { ln: 2, col: 13 }, Pos { ln: 3, col: 0 }),
+                ),
+            ))),
         )),
         Statement::VariableDeclaration(VariableDeclaration::new(
-            Identifier::new("b".to_string()),
+            Identifier::new(
+                "b".to_string(),
+                Span::new(
+                    "source.txt".to_string(),
+                    Loc::new(Pos { ln: 3, col: 8 }, Pos { ln: 3, col: 9 }),
+                ),
+            ),
             Some(Expr::Binary(BinaryExpr::new(
-                Expr::NumericLiteral(1.0),
+                Expr::NumericLiteral(NumericLiteral::new(
+                    1.0,
+                    Span::new(
+                        "source.txt".to_string(),
+                        Loc::new(Pos { ln: 3, col: 13 }, Pos { ln: 3, col: 14 }),
+                    ),
+                )),
                 Operator::Add,
-                Expr::NumericLiteral(2.0),
+                Expr::NumericLiteral(NumericLiteral::new(
+                    2.0,
+                    Span::new(
+                        "source.txt".to_string(),
+                        Loc::new(Pos { ln: 3, col: 15 }, Pos { ln: 4, col: 0 }),
+                    ),
+                )),
             ))),
         )),
     ]);

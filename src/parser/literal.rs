@@ -1,6 +1,7 @@
 use crate::{
-    ast::{Expr, StringLiteral},
+    ast::{Expr, NumericLiteral, StringLiteral},
     error::ParserError,
+    position::Span,
     token::TokenKind,
     ParseResult,
 };
@@ -20,7 +21,10 @@ impl<'a> Parser<'a> {
         match self.current_token.raw.parse::<f64>() {
             Ok(n) => {
                 self.consume();
-                Ok(Expr::NumericLiteral(n))
+                Ok(Expr::NumericLiteral(NumericLiteral::new(
+                    n,
+                    Span::new(self.lexer.filename.into(), self.current_token.loc),
+                )))
             }
             Err(_e) => Err(ParserError::parse_number_error(
                 self.lexer.filename,
@@ -33,7 +37,7 @@ impl<'a> Parser<'a> {
         self.expect(TokenKind::String)?;
         let expr = Expr::StringLiteral(StringLiteral::new(
             self.current_token.raw.to_string(),
-            self.current_token.loc,
+            Span::new(self.lexer.filename.into(), self.current_token.loc),
         ));
         self.consume();
         Ok(expr)
