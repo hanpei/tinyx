@@ -25,6 +25,6 @@ fn main() {
 
     println!("\n------ INTERPRETER START ------------\n");
     let mut evaluator = Evaluator::new();
-    evaluator.eval(&ast.unwrap());
+    evaluator.eval(ast.unwrap());
     println!("\n------- INTERPRETER END -----------\n\n");
 }

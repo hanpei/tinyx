@@ -1,8 +1,6 @@
-use std::fmt::Binary;
-
 use crate::{
     ast::{AssignExpr, BinaryExpr, Expr, Identifier, UnaryExpr},
-    error::Error,
+    error::ParserError,
     token::{Operator, TokenKind},
     ParseResult,
 };
@@ -33,6 +31,7 @@ impl<'a> Parser<'a> {
             let op = Operator::from_str(&self.current_token.raw);
             self.consume();
             let right = self.parse_relational_expr()?;
+
             left = Expr::Binary(BinaryExpr::new(left, op, right))
         }
         Ok(left)
@@ -62,7 +61,10 @@ impl<'a> Parser<'a> {
                 self.parse_assign_expr()?,
             ))),
             _ => {
-                return Err(Error::invalid_assignment(self.lexer.filename, op_loc.start));
+                return Err(ParserError::invalid_assignment(
+                    self.lexer.filename,
+                    op_loc.start,
+                ));
             }
         }
     }
@@ -96,6 +98,7 @@ impl<'a> Parser<'a> {
             let op = Operator::from_str(&self.current_token.raw);
             self.consume();
             let right = self.parse_additive_expr()?;
+
             left = Expr::Binary(BinaryExpr::new(left, op, right));
         }
         Ok(left)
@@ -115,6 +118,7 @@ impl<'a> Parser<'a> {
             let op = Operator::from_str(&self.current_token.raw);
             self.consume();
             let right = self.parse_mul_expr()?;
+
             left = Expr::Binary(BinaryExpr::new(left, op, right));
         }
         Ok(left)
@@ -133,6 +137,7 @@ impl<'a> Parser<'a> {
             let op = Operator::from_str(&self.current_token.raw);
             self.consume();
             let right = self.parse_unary_expr()?;
+
             left = Expr::Binary(BinaryExpr::new(left, op, right));
         }
         Ok(left)
@@ -175,7 +180,7 @@ impl<'a> Parser<'a> {
             _ => {
                 println!("parse_primary_expr error");
                 self.log();
-                return Err(Error::invalid_token(
+                return Err(ParserError::invalid_token(
                     self.lexer.filename,
                     self.current_token.loc.start,
                 ));

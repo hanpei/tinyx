@@ -1,7 +1,7 @@
-use crate::token::{Pos, TokenKind};
+use crate::{position::Pos, token::TokenKind};
 
 #[derive(Debug)]
-pub enum Error {
+pub enum ParserError {
     InvalidCharactor(String),
     ParseError(String),
     InvalidToken(String),
@@ -11,15 +11,15 @@ pub enum Error {
     InvalidAssignment(String),
 }
 
-impl Error {
-    pub fn invalid_charactor(file: &str, c: char, pos: Pos) -> Error {
+impl ParserError {
+    pub fn invalid_charactor(file: &str, c: char, pos: Pos) -> ParserError {
         Self::InvalidCharactor(format!(
             "invalid character {} at {}:{}:{})",
             c, file, pos.ln, pos.col
         ))
     }
 
-    pub fn parse_number_error(file: &str, pos: Pos) -> Error {
+    pub fn parse_number_error(file: &str, pos: Pos) -> ParserError {
         Self::ParseError(format!(
             "invalid number at {}:{}:{}",
             file,
@@ -27,7 +27,7 @@ impl Error {
             pos.col + 1
         ))
     }
-    pub fn invalid_token(file: &str, pos: Pos) -> Error {
+    pub fn invalid_token(file: &str, pos: Pos) -> ParserError {
         Self::InvalidToken(format!(
             "invalid token at {}:{}:{}",
             file,
@@ -41,7 +41,7 @@ impl Error {
         current: &TokenKind,
         expect: &TokenKind,
         pos: Pos,
-    ) -> Error {
+    ) -> ParserError {
         Self::UnexpectedToken(format!(
             "unexpected token: {}, expected {} at {}:{}:{}",
             current,
@@ -51,7 +51,7 @@ impl Error {
             pos.col + 1
         ))
     }
-    pub fn missing_semi(file: &str, pos: Pos) -> Error {
+    pub fn missing_semi(file: &str, pos: Pos) -> ParserError {
         Self::MissingSemicolon(format!(
             "unexpected token (maybe missing semicolon) at {}:{}:{}",
             file,
@@ -59,7 +59,7 @@ impl Error {
             pos.col + 1
         ))
     }
-    pub fn invalid_assignment(file: &str, pos: Pos) -> Error {
+    pub fn invalid_assignment(file: &str, pos: Pos) -> ParserError {
         Self::InvalidAssignment(format!(
             "Invalid left-hand side in assignment expression. at {}:{}:{}",
             file,
@@ -70,13 +70,17 @@ impl Error {
 }
 
 pub enum EvalError {
-    SyntaxError(),
+    SyntaxError(String),
+    ReferenceError(String),
 }
 
 impl std::fmt::Display for EvalError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            EvalError::SyntaxError() => write!(f, "Syntax Error!"),
+            EvalError::SyntaxError(msg) => write!(f, "Syntax Error: {}", msg),
+            EvalError::ReferenceError(variabale) => {
+                write!(f, "ReferenceError: {} is not defined", variabale)
+            }
         }
     }
 }

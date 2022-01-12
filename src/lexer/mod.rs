@@ -1,7 +1,8 @@
 use crate::{
+    position::Pos,
+    token::Operator,
     token::{Keyword, Token, TokenKind},
-    token::{Loc, Operator, Pos},
-    Error, ParseResult,
+    ParseResult, ParserError,
 };
 
 #[derive(Debug)]
@@ -11,7 +12,6 @@ pub struct Lexer<'a> {
     cursor: usize,
     ln: usize,
     col: usize,
-    pub loc: Loc,
 }
 
 impl<'a> Lexer<'a> {
@@ -22,7 +22,6 @@ impl<'a> Lexer<'a> {
             cursor: 0,
             ln: 1,
             col: 1,
-            loc: Loc::new(Pos::new(1, 1), Pos::new(1, 1)),
         }
     }
 
@@ -81,7 +80,7 @@ impl<'a> Lexer<'a> {
                     b'(' => Token::new(TokenKind::ParenOpen, "(".to_string(), start, self.pos()),
                     b')' => Token::new(TokenKind::ParenClose, ")".to_string(), start, self.pos()),
                     _ => {
-                        return Err(Error::invalid_charactor(
+                        return Err(ParserError::invalid_charactor(
                             self.filename,
                             c as char,
                             self.pos(),
@@ -112,7 +111,11 @@ impl<'a> Lexer<'a> {
                         has_point = true;
                         buf.push('.')
                     } else {
-                        return Err(Error::invalid_charactor(self.filename, '.', self.pos()));
+                        return Err(ParserError::invalid_charactor(
+                            self.filename,
+                            '.',
+                            self.pos(),
+                        ));
                     }
                 }
                 _ => break,

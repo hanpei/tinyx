@@ -1,4 +1,9 @@
-use crate::{ast::Expr, error::Error, token::TokenKind, ParseResult};
+use crate::{
+    ast::{Expr, StringLiteral},
+    error::ParserError,
+    token::TokenKind,
+    ParseResult,
+};
 
 use super::parser::Parser;
 
@@ -17,7 +22,7 @@ impl<'a> Parser<'a> {
                 self.consume();
                 Ok(Expr::NumericLiteral(n))
             }
-            Err(_e) => Err(Error::parse_number_error(
+            Err(_e) => Err(ParserError::parse_number_error(
                 self.lexer.filename,
                 self.current_token.loc.start,
             )),
@@ -26,7 +31,10 @@ impl<'a> Parser<'a> {
 
     pub(super) fn parse_string(&mut self) -> ParseResult<Expr> {
         self.expect(TokenKind::String)?;
-        let expr = Expr::StringLiteral(self.current_token.raw.to_string());
+        let expr = Expr::StringLiteral(StringLiteral::new(
+            self.current_token.raw.to_string(),
+            self.current_token.loc,
+        ));
         self.consume();
         Ok(expr)
     }
@@ -40,7 +48,7 @@ impl<'a> Parser<'a> {
         } else {
             println!("parse_boolean error");
             self.log();
-            return Err(Error::invalid_token(
+            return Err(ParserError::invalid_token(
                 self.lexer.filename,
                 self.current_token.loc.start,
             ));

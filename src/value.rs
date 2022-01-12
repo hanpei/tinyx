@@ -1,5 +1,5 @@
 use core::fmt;
-use std::{collections::HashMap, ops::Deref};
+use std::collections::HashMap;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Value {

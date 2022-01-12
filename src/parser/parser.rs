@@ -1,5 +1,6 @@
-use crate::error::Error;
-use crate::token::{Pos, TokenKind};
+use crate::error::ParserError;
+use crate::position::Pos;
+use crate::token::TokenKind;
 use crate::{ast::*, ParseResult};
 use crate::{lexer::Lexer, token::Token};
 
@@ -58,7 +59,7 @@ impl<'a> Parser<'a> {
             _ => {
                 println!("expect_end_with_semi err");
                 self.log();
-                return Err(Error::missing_semi(
+                return Err(ParserError::missing_semi(
                     self.lexer.filename,
                     self.current_token.loc.start,
                 ));
@@ -79,7 +80,7 @@ impl<'a> Parser<'a> {
         match &self.current_token.kind {
             ty if ty == &kind => Ok(()),
             _ => {
-                return Err(Error::unexpected_token(
+                return Err(ParserError::unexpected_token(
                     self.lexer.filename,
                     &self.current_token.kind,
                     &kind,

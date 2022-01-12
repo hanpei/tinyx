@@ -1,6 +1,6 @@
 use crate::{
     ast::{FunctionDeclaration, IfStatement, ReturnStatement, Statement, VariableDeclaration},
-    error::Error,
+    error::ParserError,
     token::{Keyword, Operator, TokenKind},
     ParseResult,
 };
@@ -53,7 +53,7 @@ impl<'a> Parser<'a> {
             _ => {
                 println!("parse_statment error token: ");
                 self.log();
-                return Err(Error::invalid_token(
+                return Err(ParserError::invalid_token(
                     self.lexer.filename,
                     self.current_token.loc.start,
                 ));
