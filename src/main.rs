@@ -19,12 +19,12 @@ fn main() {
     println!("\n-------- AST START ----------\n");
     let lexer = Lexer::new(&contents.as_bytes(), "source.txt");
     let mut parser = Parser::new(lexer);
-    let ast = parser.parse();
-    println!("{:#?}", ast);
+    let ast = parser.parse().unwrap();
+    println!("{:#}", ast);
     println!("\n-------- AST END -----------\n\n");
 
     println!("\n------ INTERPRETER START ------------\n");
     let mut evaluator = Evaluator::new();
-    evaluator.eval(ast.unwrap());
+    evaluator.eval(ast);
     println!("\n------- INTERPRETER END -----------\n\n");
 }

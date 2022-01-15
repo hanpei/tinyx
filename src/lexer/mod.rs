@@ -238,7 +238,7 @@ impl<'a> Lexer<'a> {
         loop {
             match self.next() {
                 Ok(token) => match token.kind {
-                    // TokenKind::Eol => continue,
+                    TokenKind::Eol => continue,
                     TokenKind::Eof => {
                         break;
                     }

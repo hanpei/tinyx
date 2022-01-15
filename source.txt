@@ -1,8 +1,24 @@
-let b
-let a = 1
-{
-    let a = 2
-    b=7
-    a
+let a = 123;
+a = "abc"
+123
+"ff"
+fff
+
+1+2*3
+
+
+if (a>0) {
+    x
+}else {
+    y
 }
-a
+
+fn add(x,y) {
+    return x+1
+}
+
+{
+    123;
+    ab
+}
+add(1, 2)

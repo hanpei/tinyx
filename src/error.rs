@@ -23,20 +23,10 @@ impl ParserError {
     }
 
     pub fn parse_number_error(file: &str, pos: Pos) -> ParserError {
-        Self::ParseError(format!(
-            "invalid number at {}:{}:{}",
-            file,
-            pos.ln,
-            pos.col + 1
-        ))
+        Self::ParseError(format!("invalid number at {}:{}:{}", file, pos.ln, pos.col))
     }
     pub fn invalid_token(file: &str, pos: Pos) -> ParserError {
-        Self::InvalidToken(format!(
-            "invalid token at {}:{}:{}",
-            file,
-            pos.ln,
-            pos.col + 1
-        ))
+        Self::InvalidToken(format!("invalid token at {}:{}:{}", file, pos.ln, pos.col))
     }
 
     pub fn unexpected_token(
@@ -47,27 +37,19 @@ impl ParserError {
     ) -> ParserError {
         Self::UnexpectedToken(format!(
             "unexpected token: {}, expected {} at {}:{}:{}",
-            current,
-            expect,
-            file,
-            pos.ln,
-            pos.col + 1
+            current, expect, file, pos.ln, pos.col
         ))
     }
     pub fn missing_semi(file: &str, pos: Pos) -> ParserError {
         Self::MissingSemicolon(format!(
             "unexpected token (maybe missing semicolon) at {}:{}:{}",
-            file,
-            pos.ln,
-            pos.col + 1
+            file, pos.ln, pos.col
         ))
     }
     pub fn invalid_assignment(file: &str, pos: Pos) -> ParserError {
         Self::InvalidAssignment(format!(
             "Invalid left-hand side in assignment expression. at {}:{}:{}",
-            file,
-            pos.ln,
-            pos.col + 1
+            file, pos.ln, pos.col
         ))
     }
 }

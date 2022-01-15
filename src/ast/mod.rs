@@ -2,8 +2,9 @@ use crate::{
     position::{Span, WithSpan},
     token::Operator,
 };
-
 pub type Ast = Program;
+
+mod ast_display;
 
 #[derive(Debug, PartialEq)]
 pub struct Program {
