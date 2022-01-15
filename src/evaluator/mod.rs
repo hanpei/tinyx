@@ -95,6 +95,7 @@ impl Evaluator {
             Expr::Unary(_) => todo!(),
             Expr::Identifier(ident) => self.eval_identifier(ident),
             Expr::Assign(expr) => self.eval_assign(expr),
+            Expr::Call(_) => todo!(),
         }
     }
 

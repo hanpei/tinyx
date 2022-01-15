@@ -155,11 +155,11 @@ impl<'a> Parser<'a> {
 
         let consequent = self.parse_statment()?;
 
-        let alternate = if let Ok(()) = self.expect_stmt_terminator() {
-            None
-        } else {
+        let alternate = if self.token_is(TokenKind::Keyword(Keyword::Else)) {
             self.eat(TokenKind::Keyword(Keyword::Else))?;
             Some(self.parse_statment()?)
+        } else {
+            None
         };
 
         let if_stmt = IfStatement::new(test, consequent, alternate);

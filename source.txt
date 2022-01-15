@@ -1,24 +1,3 @@
-let a = 123;
-a = "abc"
-123
-"ff"
-fff
-
-1+2*3
-
-
-if (a>0) {
-    x
-}else {
-    y
+function a(x) {
+    x+1
 }
-
-fn add(x,y) {
-    return x+1
-}
-
-{
-    123;
-    ab
-}
-add(1, 2)

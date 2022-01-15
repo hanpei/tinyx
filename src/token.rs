@@ -91,7 +91,7 @@ impl Keyword {
             "let" => Some(Let),
             "if" => Some(If),
             "else" => Some(Else),
-            "fn" => Some(Fn),
+            "function" => Some(Fn),
             "return" => Some(Return),
             _ => None,
         }

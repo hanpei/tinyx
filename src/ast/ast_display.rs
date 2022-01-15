@@ -38,34 +38,15 @@ impl Display for Statement {
     }
 }
 
-impl Display for Expr {
+impl Display for IfStatement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Expr::NumericLiteral(n) => write!(f, "{}", n),
-            Expr::StringLiteral(s) => write!(f, "{}", s),
-            Expr::BooleanLiteral(b) => write!(f, "{}", b),
-            Expr::Binary(b) => write!(f, "{}", b),
-            Expr::Unary(u) => write!(f, "{}", u),
-            Expr::Identifier(i) => write!(f, "{}", i),
-            Expr::Assign(a) => write!(f, "{}", a),
+        write!(f, "If: ")?;
+        write!(f, "{{ ")?;
+        write!(f, "test: {}, ", self.test)?;
+        write!(f, "consequent: {}", self.consequent)?;
+        if let Some(expr) = &self.alternate {
+            write!(f, ", alternate: {}", expr)?;
         }
-    }
-}
-
-impl Display for BinaryExpr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Binary: ")?;
-        write!(f, "{{ ")?;
-        write!(f, "{} {} {}", self.left, self.op.value, self.right)?;
-        write!(f, " }}")
-    }
-}
-
-impl Display for UnaryExpr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Unary: ")?;
-        write!(f, "{{ ")?;
-        write!(f, "{} {}", self.op.value, self.argument)?;
         write!(f, " }}")
     }
 }
@@ -77,32 +58,6 @@ impl Display for VariableDeclaration {
         write!(f, "ident: {}, ", self.id)?;
         if let Some(e) = &self.init {
             write!(f, "init: {}", e)?;
-        }
-        write!(f, " }}")
-    }
-}
-
-impl Display for AssignExpr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Assign: ")?;
-        write!(f, "{{ ")?;
-        write!(
-            f,
-            "left: {}, op: {}, right: {}",
-            self.left, self.op, self.right
-        )?;
-        write!(f, " }}")
-    }
-}
-
-impl Display for IfStatement {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "If: ")?;
-        write!(f, "{{ ")?;
-        write!(f, "test: {}, ", self.test)?;
-        write!(f, "consequent: {}, ", self.consequent)?;
-        if let Some(expr) = &self.alternate {
-            write!(f, "alternate: {}", expr)?;
         }
         write!(f, " }}")
     }
@@ -132,10 +87,79 @@ impl Display for FunctionDeclaration {
 impl Display for ReturnStatement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(expr) = &self.argument {
-            write!(f, "{}", expr)
+            write!(f, "Return: {}", expr)
         } else {
             Ok(())
         }
+    }
+}
+
+impl Display for Expr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Expr::NumericLiteral(n) => write!(f, "{}", n),
+            Expr::StringLiteral(s) => write!(f, "{}", s),
+            Expr::BooleanLiteral(b) => write!(f, "{}", b),
+            Expr::Binary(b) => write!(f, "{}", b),
+            Expr::Unary(u) => write!(f, "{}", u),
+            Expr::Identifier(i) => write!(f, "{}", i),
+            Expr::Assign(a) => write!(f, "{}", a),
+            Expr::Call(c) => write!(f, "{}", c),
+        }
+    }
+}
+
+impl Display for BinaryExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Binary: ")?;
+        write!(f, "{{ ")?;
+        write!(f, "{} {} {}", self.left, self.op.value, self.right)?;
+        write!(f, " }}")
+    }
+}
+
+impl Display for UnaryExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Unary: ")?;
+        write!(f, "{{ ")?;
+        write!(f, "{} {}", self.op.value, self.argument)?;
+        write!(f, " }}")
+    }
+}
+
+impl Display for AssignExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Assign: ")?;
+        write!(f, "{{ ")?;
+        write!(
+            f,
+            "left: {}, op: {}, right: {}",
+            self.left, self.op, self.right
+        )?;
+        write!(f, " }}")
+    }
+}
+
+impl Display for CallExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Call: ")?;
+        write!(f, "{{ ")?;
+        write!(f, "callee: {}, ", self.callee)?;
+
+        if let Some(args) = &self.arguments {
+            write!(f, "args: [ ")?;
+            for (i, arg) in args.iter().enumerate() {
+                if i == args.len() - 1 {
+                    write!(f, "{}", arg)?;
+                } else {
+                    write!(f, "{}, ", arg)?;
+                }
+            }
+            write!(f, " ]")?;
+        } else {
+            write!(f, "[]")?;
+        }
+        write!(f, " }}")
     }
 }
 

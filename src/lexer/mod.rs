@@ -202,7 +202,6 @@ impl<'a> Lexer<'a> {
                 _ => self.advance(),
             };
         }
-        println!("1111111");
         self.next()
     }
 
@@ -224,8 +223,8 @@ impl<'a> Lexer<'a> {
         while let Some(c) = self.peek() {
             match c {
                 b'\n' | b'\r' => {
-                    self.newline();
                     self.advance();
+                    self.newline();
                 }
                 _ => break,
             }

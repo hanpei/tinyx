@@ -6,6 +6,9 @@ pub type Ast = Program;
 
 mod ast_display;
 
+#[cfg(test)]
+mod tests;
+
 #[derive(Debug, PartialEq)]
 pub struct Program {
     pub body: Vec<Statement>,
@@ -37,6 +40,7 @@ pub enum Expr {
     Unary(UnaryExpr),
     Identifier(Identifier),
     Assign(AssignExpr),
+    Call(CallExpr),
 }
 
 #[derive(Debug, PartialEq)]
@@ -133,6 +137,20 @@ impl AssignExpr {
             left: Box::new(left),
             right: Box::new(right),
         }
+    }
+}
+
+pub type ArgumentList = Option<Vec<Box<Expr>>>;
+
+#[derive(Debug, PartialEq)]
+pub struct CallExpr {
+    callee: Identifier,
+    arguments: ArgumentList,
+}
+
+impl CallExpr {
+    pub fn new(callee: Identifier, arguments: ArgumentList) -> Self {
+        Self { callee, arguments }
     }
 }
 

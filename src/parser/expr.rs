@@ -1,5 +1,5 @@
 use crate::{
-    ast::{AssignExpr, BinaryExpr, Expr, Identifier, UnaryExpr},
+    ast::{ArgumentList, AssignExpr, BinaryExpr, CallExpr, Expr, Identifier, UnaryExpr},
     error::ParserError,
     position::{Span, WithSpan},
     token::{Operator, TokenKind},
@@ -155,7 +155,7 @@ impl<'a> Parser<'a> {
     /**
      *  UnaryExpression
      *      : (+ | - | !) UnaryExpression
-     *      | PrimaryExpression
+     *      | CallExpression
      *      ;
      */
     pub(super) fn parse_unary_expr(&mut self) -> ParseResult<Expr> {
@@ -173,7 +173,51 @@ impl<'a> Parser<'a> {
             return Ok(Expr::Unary(UnaryExpr::new(op_span, argument)));
         }
 
-        self.parse_primary_expr()
+        self.parse_call_expr()
+    }
+
+    /**
+     * CallExpression
+     *      : PrimaryExpression ( "(" Arguments? ")" )*
+     */
+    fn parse_call_expr(&mut self) -> ParseResult<Expr> {
+        let expr = self.parse_primary_expr()?;
+        if self.token_is(TokenKind::ParenOpen) {
+            if let Expr::Identifier(ident) = expr {
+                self.eat(TokenKind::ParenOpen)?;
+                let arguments = self.parse_arguments().unwrap();
+                self.eat(TokenKind::ParenClose)?;
+                let expr = CallExpr::new(ident, arguments);
+                Ok(Expr::Call(expr))
+            } else {
+                return Err(ParserError::invalid_token(
+                    self.lexer.filename,
+                    self.current_token.loc.start,
+                ));
+            }
+        } else {
+            Ok(expr)
+        }
+    }
+
+    /**
+     * Arguments
+     *      : Expression ("," Expression)*
+     */
+    fn parse_arguments(&mut self) -> ParseResult<ArgumentList> {
+        if !self.token_is(TokenKind::ParenClose) {
+            let mut list = Vec::new();
+            let expr = self.parse_expression()?;
+            list.push(Box::new(expr));
+            while self.token_is(TokenKind::Comma) {
+                self.consume();
+                let expr = self.parse_expression()?;
+                list.push(Box::new(expr));
+            }
+            Ok(Some(list))
+        } else {
+            Ok(None)
+        }
     }
 
     /**

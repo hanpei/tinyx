@@ -44,6 +44,15 @@ BlockStatement:
     : "{" statementList "}"
     ;
 
+FunctionDeclaration
+    : "fn" Identifier ( "(" ( FormalParameterList )? ")" ) BlockStatement
+    ;
+
+FormalParameterList
+    : Identifier ( "," Identifier )*
+    ;
+
+
 
 // expression
 
@@ -53,7 +62,7 @@ Expression:
 
 AssignmentExpression:
     : EqualityExpression
-    | IDENTIFIER "=" AssignmentExpression
+    | Identifier "=" AssignmentExpression
     ;
 
 EqualityExpression
@@ -74,6 +83,21 @@ MultiplicativeExpression
 
 UnaryExpression
     : PrimaryExpression
+    | CallExpression
     ;
+
+CallExpression
+    : PrimaryExpression ( "(" arguments? ")" )*
+    ;
+Arguments:
+    : expression ( "," expression )*
+    ;
+
+PrimaryExpression
+    : Literal
+    | Identifier
+    | Expression
+    ;
+
 
 ```
