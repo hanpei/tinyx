@@ -1,4 +1,7 @@
-use crate::{position::Span, token::Operator};
+use crate::{
+    position::{Span, WithSpan},
+    token::Operator,
+};
 
 pub type Ast = Program;
 
@@ -62,12 +65,12 @@ impl NumericLiteral {
 #[derive(Debug, PartialEq)]
 pub struct BinaryExpr {
     pub left: Box<Expr>,
-    pub op: Operator,
+    pub op: WithSpan<Operator>,
     pub right: Box<Expr>,
 }
 
 impl BinaryExpr {
-    pub fn new(left: Expr, op: Operator, right: Expr) -> Self {
+    pub fn new(left: Expr, op: WithSpan<Operator>, right: Expr) -> Self {
         Self {
             left: Box::new(left),
             op,
@@ -78,12 +81,12 @@ impl BinaryExpr {
 
 #[derive(Debug, PartialEq)]
 pub struct UnaryExpr {
-    pub op: Operator,
+    pub op: WithSpan<Operator>,
     pub argument: Box<Expr>,
 }
 
 impl UnaryExpr {
-    pub fn new(op: Operator, argument: Expr) -> Self {
+    pub fn new(op: WithSpan<Operator>, argument: Expr) -> Self {
         Self {
             op,
             argument: Box::new(argument),

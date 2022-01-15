@@ -33,3 +33,23 @@ impl Span {
         Self { filename, loc }
     }
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct WithSpan<T> {
+    pub value: T,
+    pub filename: String,
+    pub loc: Loc,
+}
+
+impl<T> WithSpan<T> {
+    pub fn new(value: T, filename: String, loc: Loc) -> Self {
+        Self {
+            value,
+            filename,
+            loc,
+        }
+    }
+    pub fn span(&self) -> Span {
+        Span::new(self.filename.to_string(), self.loc)
+    }
+}

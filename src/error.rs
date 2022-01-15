@@ -73,14 +73,18 @@ impl ParserError {
 }
 
 pub enum EvalError {
-    SyntaxError(String),
+    SyntaxError(String, Span),
     ReferenceError(String, Span),
 }
 
 impl std::fmt::Display for EvalError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            EvalError::SyntaxError(msg) => write!(f, "Syntax Error: {}", msg),
+            EvalError::SyntaxError(msg, span) => write!(
+                f,
+                "Syntax Error: {}, at: {}:{}:{}",
+                msg, span.filename, span.loc.start.ln, span.loc.start.col
+            ),
             EvalError::ReferenceError(variabale, span) => write!(
                 f,
                 "ReferenceError: {} is not defined, at: {}:{}:{}",

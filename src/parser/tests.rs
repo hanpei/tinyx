@@ -2,7 +2,7 @@ use crate::{
     ast::{BinaryExpr, Expr, Identifier, NumericLiteral, Program, Statement, VariableDeclaration},
     lexer::Lexer,
     parser::parser::Parser,
-    position::{Loc, Pos, Span},
+    position::{Loc, Pos, Span, WithSpan},
     token::Operator,
     ParseResult,
 };
@@ -71,7 +71,11 @@ fn test_binary_expr() {
                 Loc::new(Pos { ln: 2, col: 7 }, Pos { ln: 2, col: 8 }),
             ),
         )),
-        Operator::Mul,
+        WithSpan {
+            value: Operator::Mul,
+            filename: "source.txt".to_string(),
+            loc: Loc::new(Pos { ln: 2, col: 8 }, Pos { ln: 2, col: 9 }),
+        },
         Expr::NumericLiteral(NumericLiteral::new(
             3.0,
             Span::new(
@@ -88,7 +92,11 @@ fn test_binary_expr() {
                 Loc::new(Pos { ln: 2, col: 5 }, Pos { ln: 2, col: 6 }),
             ),
         )),
-        Operator::Add,
+        WithSpan {
+            value: Operator::Add,
+            filename: "source.txt".to_string(),
+            loc: Loc::new(Pos { ln: 2, col: 6 }, Pos { ln: 2, col: 7 }),
+        },
         Expr::Binary(right),
     );
     let ret = Program::new(vec![Statement::ExprStmt(Expr::Binary(binay))]);
@@ -112,7 +120,11 @@ fn test_binary_expr_parenparentheses() {
                 Loc::new(Pos { ln: 2, col: 6 }, Pos { ln: 2, col: 7 }),
             ),
         )),
-        Operator::Add,
+        WithSpan {
+            value: Operator::Add,
+            filename: "source.txt".to_string(),
+            loc: Loc::new(Pos { ln: 2, col: 7 }, Pos { ln: 2, col: 8 }),
+        },
         Expr::NumericLiteral(NumericLiteral::new(
             2.0,
             Span::new(
@@ -123,7 +135,11 @@ fn test_binary_expr_parenparentheses() {
     );
     let b2 = BinaryExpr::new(
         Expr::Binary(b1),
-        Operator::Mul,
+        WithSpan {
+            value: Operator::Mul,
+            filename: "source.txt".to_string(),
+            loc: Loc::new(Pos { ln: 2, col: 10 }, Pos { ln: 2, col: 11 }),
+        },
         Expr::NumericLiteral(NumericLiteral::new(
             3.0,
             Span::new(
@@ -181,7 +197,11 @@ fn test_let_stmt() {
                         Loc::new(Pos { ln: 3, col: 13 }, Pos { ln: 3, col: 14 }),
                     ),
                 )),
-                Operator::Add,
+                WithSpan {
+                    value: Operator::Add,
+                    filename: "source.txt".to_string(),
+                    loc: Loc::new(Pos { ln: 3, col: 14 }, Pos { ln: 3, col: 15 }),
+                },
                 Expr::NumericLiteral(NumericLiteral::new(
                     2.0,
                     Span::new(

@@ -1,5 +1,5 @@
-use error::ParserError;
-use std::result;
+use error::{EvalError, ParserError};
+use value::Value;
 
 pub mod ast;
 pub mod error;
@@ -10,4 +10,5 @@ pub mod position;
 pub mod token;
 pub mod value;
 
-pub type ParseResult<T> = result::Result<T, ParserError>;
+pub type ParseResult<T> = std::result::Result<T, ParserError>;
+pub type EvalResult = std::result::Result<Value, EvalError>;

@@ -25,9 +25,11 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    // some ast start from col= 0, and some start from col =1
+    // vscode editor start from col = 1
     pub fn pos(&mut self) -> Pos {
-        // Pos::new(self.ln, self.col)
-        Pos::new(self.ln, self.col - 1)
+        Pos::new(self.ln, self.col)
+        // Pos::new(self.ln, self.col - 1)
     }
 
     fn advance(&mut self) -> Option<u8> {

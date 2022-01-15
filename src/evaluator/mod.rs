@@ -1,10 +1,18 @@
-use crate::{ast::*, error::EvalError, token::Operator, value::Value};
+use std::{cell::RefCell, rc::Rc};
+
+use crate::{
+    ast::*,
+    error::EvalError,
+    position::{Span, WithSpan},
+    token::Operator,
+    value::Value,
+    EvalResult,
+};
 
 use self::env::Environment;
 
 mod env;
 
-type EvalResult = std::result::Result<Value, EvalError>;
 pub struct Evaluator {
     env: Environment,
 }
@@ -47,7 +55,7 @@ impl Evaluator {
     fn eval_stmt(&mut self, stmt: Statement) -> EvalResult {
         match stmt {
             Statement::ExprStmt(expr) => self.eval_expr(expr),
-            Statement::Block(_) => todo!(),
+            Statement::Block(block) => self.eval_block(block),
             Statement::Empty => todo!(),
             Statement::VariableDeclaration(decl) => self.eval_var_decl(decl),
             Statement::FunctionDeclaration(_) => todo!(),
@@ -63,8 +71,19 @@ impl Evaluator {
             Some(expr) => self.eval_expr(expr)?,
             None => Value::Null,
         };
-        self.env.define(name.to_string(), value.clone());
+        self.env.define(&name, value.clone());
         Ok(value)
+    }
+
+    fn eval_block(&mut self, block: Vec<Statement>) -> EvalResult {
+        let prev_env = self.env.clone();
+        self.env = Environment::extends(&Rc::new(RefCell::new(self.env.clone())));
+        let mut result = Value::Null;
+        for stmt in block {
+            result = self.eval_stmt(stmt)?
+        }
+        self.env = prev_env;
+        Ok(result)
     }
 
     fn eval_expr(&mut self, expr: Expr) -> EvalResult {
@@ -92,8 +111,8 @@ impl Evaluator {
         }
     }
 
-    fn eval_arithmatic(&mut self, op: Operator, left: f64, right: f64) -> EvalResult {
-        let result = match op {
+    fn eval_arithmatic(&mut self, op: WithSpan<Operator>, left: f64, right: f64) -> EvalResult {
+        let result = match op.value {
             Operator::Add => left + right,
             Operator::Min => left - right,
             Operator::Mul => left * right,
@@ -103,18 +122,26 @@ impl Evaluator {
         Ok(Value::Float(result))
     }
 
-    fn eval_string_concat(&mut self, op: Operator, left: String, right: String) -> EvalResult {
-        let result = match op {
+    fn eval_string_concat(
+        &mut self,
+        op: WithSpan<Operator>,
+        left: String,
+        right: String,
+    ) -> EvalResult {
+        let result = match op.value {
             Operator::Add => {
                 let mut str = String::from(left);
                 str.push_str(&right);
                 str
             }
             _ => {
-                return Err(EvalError::SyntaxError(format!(
-                    "invalid operator at \"{}\" {} \"{}\"",
-                    left, op, right
-                )))
+                return Err(EvalError::SyntaxError(
+                    format!(
+                        "invalid operator at \"{}\" {} \"{}\"",
+                        left, op.value, right
+                    ),
+                    op.span(),
+                ))
             }
         };
         Ok(Value::String(result))
@@ -123,7 +150,7 @@ impl Evaluator {
     fn eval_identifier(&mut self, ident: Identifier) -> EvalResult {
         let Identifier { name, span } = ident;
         match self.env.lookup(&name) {
-            Some(value) => Ok(value.clone()),
+            Some(value) => Ok(value),
             None => return Err(EvalError::ReferenceError(name, span)),
         }
     }
@@ -133,9 +160,9 @@ impl Evaluator {
         match op {
             Operator::Assign => {
                 let Identifier { name, span } = *left;
+                let value = self.eval_expr(*right)?;
                 match self.env.lookup(&name) {
                     Some(_) => {
-                        let value = self.eval_expr(*right)?;
                         self.env.assign(&name, value.clone());
                         Ok(value)
                     }

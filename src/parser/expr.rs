@@ -1,7 +1,7 @@
 use crate::{
     ast::{AssignExpr, BinaryExpr, Expr, Identifier, UnaryExpr},
     error::ParserError,
-    position::Span,
+    position::{Span, WithSpan},
     token::{Operator, TokenKind},
     ParseResult,
 };
@@ -30,10 +30,12 @@ impl<'a> Parser<'a> {
             TokenKind::Operator(Operator::Equal),
         ]) {
             let op = Operator::from_str(&self.current_token.raw);
+            let op_span =
+                WithSpan::new(op, self.lexer.filename.to_string(), self.current_token.loc);
             self.consume();
             let right = self.parse_relational_expr()?;
 
-            left = Expr::Binary(BinaryExpr::new(left, op, right))
+            left = Expr::Binary(BinaryExpr::new(left, op_span, right))
         }
         Ok(left)
     }
@@ -97,10 +99,12 @@ impl<'a> Parser<'a> {
             TokenKind::Operator(Operator::NotEqual),
         ]) {
             let op = Operator::from_str(&self.current_token.raw);
+            let op_span =
+                WithSpan::new(op, self.lexer.filename.to_string(), self.current_token.loc);
             self.consume();
             let right = self.parse_additive_expr()?;
 
-            left = Expr::Binary(BinaryExpr::new(left, op, right));
+            left = Expr::Binary(BinaryExpr::new(left, op_span, right));
         }
         Ok(left)
     }
@@ -117,10 +121,12 @@ impl<'a> Parser<'a> {
             TokenKind::Operator(Operator::Min),
         ]) {
             let op = Operator::from_str(&self.current_token.raw);
+            let op_span =
+                WithSpan::new(op, self.lexer.filename.to_string(), self.current_token.loc);
             self.consume();
             let right = self.parse_mul_expr()?;
 
-            left = Expr::Binary(BinaryExpr::new(left, op, right));
+            left = Expr::Binary(BinaryExpr::new(left, op_span, right));
         }
         Ok(left)
     }
@@ -136,10 +142,12 @@ impl<'a> Parser<'a> {
             TokenKind::Operator(Operator::Div),
         ]) {
             let op = Operator::from_str(&self.current_token.raw);
+            let op_span =
+                WithSpan::new(op, self.lexer.filename.to_string(), self.current_token.loc);
             self.consume();
             let right = self.parse_unary_expr()?;
 
-            left = Expr::Binary(BinaryExpr::new(left, op, right));
+            left = Expr::Binary(BinaryExpr::new(left, op_span, right));
         }
         Ok(left)
     }
@@ -158,9 +166,11 @@ impl<'a> Parser<'a> {
         ]) {
             // self.parse_unary_expr()?;
             let op = Operator::from_str(&self.current_token.raw);
+            let op_span =
+                WithSpan::new(op, self.lexer.filename.to_string(), self.current_token.loc);
             self.consume();
             let argument = self.parse_unary_expr()?;
-            return Ok(Expr::Unary(UnaryExpr::new(op, argument)));
+            return Ok(Expr::Unary(UnaryExpr::new(op_span, argument)));
         }
 
         self.parse_primary_expr()
