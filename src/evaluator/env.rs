@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{error::EvalError, value::Value};
+use crate::{error::EvalError, value::Value, EvalResult};
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct Environment {
@@ -20,11 +20,12 @@ impl Environment {
         Rc::new(RefCell::new(Environment::new()))
     }
 
-    pub fn extends(outer: &Rc<RefCell<Environment>>) -> Self {
-        Environment {
+    pub fn extends(outer: &Rc<RefCell<Environment>>) -> Rc<RefCell<Environment>> {
+        let env = Environment {
             store: HashMap::new(),
             outer: Some(Rc::clone(outer)),
-        }
+        };
+        Rc::new(RefCell::new(env))
     }
 
     pub fn lookup(&self, name: &str) -> Option<Value> {
@@ -41,13 +42,17 @@ impl Environment {
         self.store.insert(name.into(), value);
     }
 
-    pub fn assign(&mut self, name: &str, value: Value) {
+    pub fn assign(&mut self, name: &str, value: Value) -> Option<Value> {
         if self.store.contains_key(name.into()) {
-            self.store.insert(name.into(), value);
+            self.store.insert(name.into(), value.clone());
+            Some(value)
         } else {
             match &self.outer {
-                Some(outer) => outer.as_ref().borrow_mut().assign(name, value),
-                None => unreachable!(),
+                Some(outer) => {
+                    outer.as_ref().borrow_mut().assign(name, value.clone());
+                    Some(value)
+                }
+                None => None,
             }
         }
     }
@@ -62,13 +67,13 @@ mod tests {
         let first = Environment::default();
         let second = Environment::extends(&first);
 
-        first.borrow_mut().define("foo", Value::Int(42));
+        first.borrow_mut().define("foo", Value::Number(42.0));
 
         let a = first.borrow().lookup("foo").unwrap();
-        let b = second.lookup("foo").unwrap();
+        let b = second.borrow().lookup("foo").unwrap();
 
-        assert_eq!(a, Value::Int(42));
-        assert_eq!(b, Value::Int(42));
+        assert_eq!(a, Value::Number(42.0));
+        assert_eq!(b, Value::Number(42.0));
         assert_eq!(a, b);
     }
 
@@ -77,11 +82,11 @@ mod tests {
         let first = Environment::default();
         let mut second = Environment::extends(&first);
 
-        first.borrow_mut().define("foo", Value::Int(42));
-        second.assign("foo", Value::Int(1));
+        first.borrow_mut().define("foo", Value::Number(42.0));
+        second.borrow_mut().assign("foo", Value::Number(1.0));
 
         assert_eq!(
-            second.lookup("foo").unwrap(),
+            second.borrow_mut().lookup("foo").unwrap(),
             first.borrow().lookup("foo").unwrap()
         );
     }

@@ -11,4 +11,4 @@ pub mod token;
 pub mod value;
 
 pub type ParseResult<T> = std::result::Result<T, ParserError>;
-pub type EvalResult = std::result::Result<Value, EvalError>;
+pub type EvalResult<T> = std::result::Result<T, EvalError>;

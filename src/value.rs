@@ -6,8 +6,7 @@ pub enum Value {
     Null,
     String(String),
     Boolean(bool),
-    Int(i64),
-    Float(f64),
+    Number(f64),
     Array(Vec<Value>),
     Object(HashMap<String, Value>),
 }
@@ -18,8 +17,7 @@ impl fmt::Display for Value {
             Value::Null => write!(f, "null"),
             Value::String(s) => write!(f, "\"{}\"", s),
             Value::Boolean(b) => write!(f, "{}", b),
-            Value::Int(i) => write!(f, "{}", i),
-            Value::Float(v) => write!(f, "{}", v),
+            Value::Number(v) => write!(f, "{}", v),
             Value::Array(a) => fmt_array(a, f),
             Value::Object(o) => fmt_obj(o, f),
         }
@@ -58,15 +56,14 @@ mod tests {
         let array = vec![
             Value::String(String::from("abcd")),
             Value::Boolean(true),
-            Value::Int(12),
-            Value::Array(vec![Value::Int(1), Value::Int(2)]),
+            Value::Array(vec![Value::Number(1.0), Value::Number(2.0)]),
         ];
 
         let mut o = HashMap::new();
-        o.insert("a".into(), Value::Int(1));
+        o.insert("a".into(), Value::Number(1.0));
 
         let mut obj = HashMap::new();
-        obj.insert("a".into(), Value::Int(1));
+        obj.insert("a".into(), Value::Number(1.0));
         obj.insert("b".into(), Value::String("xyz".to_string()));
         obj.insert("c".into(), Value::Null);
         obj.insert("d".into(), Value::Object(o));
@@ -75,8 +72,7 @@ mod tests {
             Value::Null,
             Value::String(String::from("abcd")),
             Value::Boolean(true),
-            Value::Int(12),
-            Value::Float(1.2),
+            Value::Number(1.2),
             Value::Array(array),
             Value::Object(obj),
         ];

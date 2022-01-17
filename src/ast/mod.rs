@@ -126,7 +126,7 @@ impl VariableDeclaration {
 #[derive(Debug, PartialEq)]
 pub struct AssignExpr {
     pub op: Operator,
-    pub left: Box<Identifier>,
+    pub left: Identifier,
     pub right: Box<Expr>,
 }
 
@@ -134,7 +134,7 @@ impl AssignExpr {
     pub fn new(op: Operator, left: Identifier, right: Expr) -> Self {
         Self {
             op,
-            left: Box::new(left),
+            left,
             right: Box::new(right),
         }
     }
