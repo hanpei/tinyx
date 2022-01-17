@@ -162,6 +162,8 @@ impl<'a> Lexer<'a> {
 
         if &buf == "true" || &buf == "false" {
             Ok(Token::new(TokenKind::Boolean, buf, start, self.pos()))
+        } else if &buf == "null" {
+            Ok(Token::new(TokenKind::Null, buf, start, self.pos()))
         } else {
             match Keyword::from_str(&buf) {
                 Some(key) => Ok(Token::new(TokenKind::Keyword(key), buf, start, self.pos())),

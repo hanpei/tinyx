@@ -8,6 +8,8 @@ impl<'a> Parser<'a> {
      *      : NUMBER
      *      | STRING
      *      | BOOLEAN
+     *      | Null
+     *      ;
      */
     pub(super) fn parse_number(&mut self) -> ParseResult<Expr> {
         self.expect(TokenKind::Number)?;
@@ -52,6 +54,13 @@ impl<'a> Parser<'a> {
             ));
         };
         let expr = Expr::BooleanLiteral(b);
+        self.consume();
+        Ok(expr)
+    }
+
+    pub(super) fn parse_null(&mut self) -> ParseResult<Expr> {
+        self.expect(TokenKind::Null)?;
+        let expr = Expr::NullLiteral;
         self.consume();
         Ok(expr)
     }

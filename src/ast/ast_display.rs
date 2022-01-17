@@ -121,6 +121,7 @@ impl Display for Expr {
             Expr::Identifier(i) => write!(f, "{}", i),
             Expr::Assign(a) => write!(f, "{}", a),
             Expr::Call(c) => write!(f, "{}", c),
+            Expr::NullLiteral => write!(f, "null"),
         }
     }
 }
@@ -138,7 +139,7 @@ impl Display for UnaryExpr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Unary: ")?;
         write!(f, "{{ ")?;
-        write!(f, "{} {}", self.op.value, self.argument)?;
+        write!(f, "{}{}", self.op.value, self.argument)?;
         write!(f, " }}")
     }
 }

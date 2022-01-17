@@ -39,6 +39,7 @@ pub enum TokenKind {
     ParenOpen,
     ParenClose,
     Keyword(Keyword),
+    Null,
 }
 
 impl std::fmt::Display for TokenKind {
@@ -59,6 +60,7 @@ impl std::fmt::Display for TokenKind {
             TokenKind::Keyword(key) => write!(f, "Keyword::{}", key),
             TokenKind::Boolean => write!(f, "Boolean"),
             TokenKind::Comma => write!(f, "Comma"),
+            TokenKind::Null => write!(f, "null"),
         }
     }
 }

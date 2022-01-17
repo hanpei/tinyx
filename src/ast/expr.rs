@@ -8,6 +8,7 @@ pub enum Expr {
     NumericLiteral(NumericLiteral),
     StringLiteral(StringLiteral),
     BooleanLiteral(bool),
+    NullLiteral,
     Binary(BinaryExpr),
     Unary(UnaryExpr),
     Identifier(Identifier),

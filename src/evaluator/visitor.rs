@@ -45,6 +45,7 @@ pub trait ExprVisitor {
             Expr::Identifier(ident) => self.visit_ident(ident),
             Expr::Assign(a) => self.visit_assign(a),
             Expr::Call(c) => self.visit_call(c),
+            Expr::NullLiteral => self.visit_null(),
         }
     }
 
@@ -63,5 +64,8 @@ pub trait ExprVisitor {
     }
     fn visit_boolean(&mut self, lit: bool) -> ExprResult {
         Ok(Value::Boolean(lit))
+    }
+    fn visit_null(&mut self) -> ExprResult {
+        Ok(Value::Null)
     }
 }

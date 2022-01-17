@@ -154,14 +154,13 @@ impl<'a> Parser<'a> {
 
     /**
      *  UnaryExpression
-     *      : (+ | - | !) UnaryExpression
+     *      : (- | !) UnaryExpression
      *      | CallExpression
      *      ;
      */
     pub(super) fn parse_unary_expr(&mut self) -> ParseResult<Expr> {
         if self.expect_one_of(&[
             TokenKind::Operator(Operator::Min),
-            TokenKind::Operator(Operator::Add),
             TokenKind::Operator(Operator::Not),
         ]) {
             // self.parse_unary_expr()?;
@@ -229,7 +228,9 @@ impl<'a> Parser<'a> {
      */
     fn parse_primary_expr(&mut self) -> ParseResult<Expr> {
         match self.current_token.kind {
-            TokenKind::Number | TokenKind::String | TokenKind::Boolean => self.parse_literal(),
+            TokenKind::Number | TokenKind::String | TokenKind::Boolean | TokenKind::Null => {
+                self.parse_literal()
+            }
             TokenKind::Identifier => self.parse_identifier_expr(),
             TokenKind::ParenOpen => self.parse_parenthesized_expr(),
             _ => {
@@ -268,6 +269,7 @@ impl<'a> Parser<'a> {
             TokenKind::Number => self.parse_number(),
             TokenKind::String => self.parse_string(),
             TokenKind::Boolean => self.parse_boolean(),
+            TokenKind::Null => self.parse_null(),
             _ => unreachable!("{:?}", self.current_token.kind),
         }
     }

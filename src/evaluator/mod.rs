@@ -136,10 +136,7 @@ impl ExprVisitor for Interpreter {
         let right = &self.evaluate(right)?;
 
         let op_err = EvalError::SyntaxError(
-            format!(
-                "invalid operator at \"{}\" {} \"{}\"",
-                left, op.value, right
-            ),
+            format!("invalid operator at [{} {} {}]", left, op.value, right),
             op.span(),
         );
 
@@ -166,7 +163,25 @@ impl ExprVisitor for Interpreter {
     }
 
     fn visit_unary(&mut self, unary: &UnaryExpr) -> ExprResult {
-        todo!()
+        let UnaryExpr { op, argument } = unary;
+        let value = self.evaluate(argument)?;
+        let op_err = EvalError::SyntaxError(
+            format!("invalid operator at [{} {}]", op.value, value),
+            op.span(),
+        );
+
+        match op.value {
+            Operator::Min => match value {
+                Value::Number(n) => Ok(Value::Number(-n)),
+                _ => return Err(op_err),
+            },
+            Operator::Not => match value {
+                Value::Boolean(b) => Ok(Value::Boolean(!b)),
+                Value::Null => Ok(Value::Boolean(true)),
+                _ => Ok(Value::Boolean(false)),
+            },
+            _ => Err(op_err),
+        }
     }
 
     fn visit_assign(&mut self, assign: &AssignExpr) -> ExprResult {

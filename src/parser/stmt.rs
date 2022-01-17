@@ -46,6 +46,7 @@ impl<'a> Parser<'a> {
             TokenKind::ParenOpen => self.parse_expression_stmt(),
             TokenKind::Number => self.parse_expression_stmt(),
             TokenKind::String => self.parse_expression_stmt(),
+            TokenKind::Null => self.parse_expression_stmt(),
             TokenKind::Operator(_) => self.parse_expression_stmt(),
             TokenKind::Identifier => self.parse_expression_stmt(),
             TokenKind::Keyword(Keyword::Let) => self.parse_variable_stmt(),
