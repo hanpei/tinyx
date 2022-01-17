@@ -70,6 +70,8 @@ pub enum Keyword {
     Else,
     Fn,
     Return,
+    While,
+    Print,
 }
 
 impl std::fmt::Display for Keyword {
@@ -80,6 +82,8 @@ impl std::fmt::Display for Keyword {
             Keyword::Else => write!(f, "Else"),
             Keyword::Fn => write!(f, "Function"),
             Keyword::Return => write!(f, "Return"),
+            Keyword::While => write!(f, "While"),
+            Keyword::Print => write!(f, "Print"),
         }
     }
 }
@@ -93,6 +97,8 @@ impl Keyword {
             "else" => Some(Else),
             "function" => Some(Fn),
             "return" => Some(Return),
+            "while" => Some(While),
+            "print" => Some(Print),
             _ => None,
         }
     }

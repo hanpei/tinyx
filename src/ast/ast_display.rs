@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use super::*;
+use super::{expr::*, stmt::*, Program};
 
 impl Display for Program {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -34,6 +34,13 @@ impl Display for Statement {
             Statement::FunctionDeclaration(func) => write!(f, "{}", func),
             Statement::If(i) => write!(f, "{}", i),
             Statement::Return(r) => write!(f, "{}", r),
+            Statement::PrintStmt(e) => {
+                write!(f, "Print: ")?;
+                write!(f, "{{ ")?;
+                write!(f, "{}", e)?;
+                write!(f, " }}")
+            }
+            Statement::While(s) => write!(f, "{}", s),
         }
     }
 }
@@ -91,6 +98,15 @@ impl Display for ReturnStatement {
         } else {
             Ok(())
         }
+    }
+}
+impl Display for WhileStmt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "WhileLoop: ")?;
+        write!(f, "{{ ")?;
+        write!(f, "test: {}, ", self.test)?;
+        write!(f, "body: {}", self.body)?;
+        write!(f, " }}")
     }
 }
 

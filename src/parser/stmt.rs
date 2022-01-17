@@ -1,5 +1,5 @@
 use crate::{
-    ast::{FunctionDeclaration, IfStatement, ReturnStatement, Statement, VariableDeclaration},
+    ast::stmt::*,
     error::ParserError,
     token::{Keyword, Operator, TokenKind},
     ParseResult,
@@ -34,6 +34,8 @@ impl<'a> Parser<'a> {
      *      | ReturnStatement
      *      | VariableDeclarator
      *      | FunctionDeclaration
+     *      | PrintStatement
+     *      | WhileStatement
      *      ;
      *      ...
      */
@@ -50,6 +52,8 @@ impl<'a> Parser<'a> {
             TokenKind::Keyword(Keyword::If) => self.parse_if_stmt(),
             TokenKind::Keyword(Keyword::Fn) => self.parse_fn_declaration_stmt(),
             TokenKind::Keyword(Keyword::Return) => self.parse_return_stmt(),
+            TokenKind::Keyword(Keyword::Print) => self.parse_print_stmt(),
+            TokenKind::Keyword(Keyword::While) => self.parse_while_stmt(),
             _ => {
                 println!("parse_statment error token: ");
                 self.log();
@@ -217,5 +221,37 @@ impl<'a> Parser<'a> {
         let stmt = ReturnStatement::new(argument);
         self.expect_stmt_terminator()?;
         Ok(Statement::Return(stmt))
+    }
+
+    /**
+     *  WhileStatement
+     *      : "while" "(" expression ")" statement
+     *      ;
+     */
+    fn parse_while_stmt(&mut self) -> ParseResult<Statement> {
+        self.eat(TokenKind::Keyword(Keyword::While))?;
+
+        self.eat(TokenKind::ParenOpen)?;
+        let test = self.parse_expression()?;
+        self.eat(TokenKind::ParenClose)?;
+
+        let body = self.parse_statment()?;
+        let stmt = WhileStmt::new(test, body);
+
+        // self.expect_stmt_terminator()?;
+        Ok(Statement::While(stmt))
+    }
+
+    /**
+     * 后面应该挪到builtin中
+     * PrintStatement
+     *      : "print" Expression STMT_END
+     *      ;
+     */
+    fn parse_print_stmt(&mut self) -> ParseResult<Statement> {
+        self.eat(TokenKind::Keyword(Keyword::Print))?;
+        let expr = self.parse_expression()?;
+        self.expect_stmt_terminator()?;
+        Ok(Statement::PrintStmt(expr))
     }
 }

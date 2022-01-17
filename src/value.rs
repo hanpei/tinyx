@@ -11,6 +11,16 @@ pub enum Value {
     Object(HashMap<String, Value>),
 }
 
+impl Value {
+    pub fn is_truthy(&self) -> bool {
+        if let Value::Boolean(b) = self {
+            *b == true
+        } else {
+            false
+        }
+    }
+}
+
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

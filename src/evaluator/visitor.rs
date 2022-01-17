@@ -1,4 +1,8 @@
-use crate::{ast::*, value::Value, EvalResult};
+use crate::{
+    ast::{expr::*, stmt::*},
+    value::Value,
+    EvalResult,
+};
 
 pub type StmtResult = EvalResult<()>;
 pub type ExprResult = EvalResult<Value>;
@@ -14,6 +18,8 @@ pub trait StmtVisitor {
             Statement::FunctionDeclaration(delc) => self.visit_function_declare(delc),
             Statement::If(i) => self.visit_if_stmt(i),
             Statement::Return(r) => self.visit_return_stmt(r),
+            Statement::PrintStmt(expr) => self.visit_print_stmt(expr),
+            Statement::While(w) => self.visit_while_stmt(w),
         }
     }
 
@@ -23,6 +29,8 @@ pub trait StmtVisitor {
     fn visit_function_declare(&mut self, decl: &FunctionDeclaration) -> StmtResult;
     fn visit_if_stmt(&mut self, stmt: &IfStatement) -> StmtResult;
     fn visit_return_stmt(&mut self, stmt: &ReturnStatement) -> StmtResult;
+    fn visit_print_stmt(&mut self, expr: &Expr) -> StmtResult;
+    fn visit_while_stmt(&mut self, stmt: &WhileStmt) -> StmtResult;
 }
 
 // expr ===============================

@@ -1,17 +1,10 @@
-use std::{
-    cell::RefCell,
-    fmt::{Binary, Result},
-    rc::Rc,
-    result,
-};
+use std::{cell::RefCell, rc::Rc, result};
 
 use crate::{
-    ast::*,
+    ast::{expr::*, stmt::*, Program},
     error::EvalError,
-    position::{Span, WithSpan},
     token::Operator,
     value::Value,
-    EvalResult,
 };
 
 use self::{
@@ -24,20 +17,23 @@ mod visitor;
 
 pub struct Interpreter {
     env: Rc<RefCell<Environment>>,
-    result: Value,
+    result: Option<Value>,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
         Interpreter {
             env: Environment::default(),
-            result: Value::Null,
+            result: None,
         }
     }
 
     pub fn interpret(&mut self, program: Program) -> StmtResult {
         match self.eval_program(program) {
-            Ok(()) => println!(" > {}", self.result),
+            Ok(()) => match &self.result {
+                Some(v) => println!(" > {}", v),
+                None => (),
+            },
             Err(e) => println!(" > {}", e),
         }
         Ok(())
@@ -64,7 +60,7 @@ impl StmtVisitor for Interpreter {
     fn visit_expr_stmt(&mut self, expr: &Expr) -> StmtResult {
         let value = self.evaluate(expr)?;
         // 把ExpressionStatement最后一个expression的结果显示出来
-        self.result = value;
+        self.result = Some(value);
         Ok(())
     }
 
@@ -94,11 +90,41 @@ impl StmtVisitor for Interpreter {
     }
 
     fn visit_if_stmt(&mut self, stmt: &IfStatement) -> StmtResult {
-        todo!()
+        let IfStatement {
+            test,
+            consequent,
+            alternate,
+        } = stmt;
+        let test = self.evaluate(test)?;
+        if test.is_truthy() {
+            self.execute(&consequent)?;
+        } else {
+            match alternate {
+                Some(stmt) => self.execute(stmt)?,
+                None => (),
+            }
+        }
+        Ok(())
     }
 
     fn visit_return_stmt(&mut self, stmt: &ReturnStatement) -> StmtResult {
         todo!()
+    }
+
+    fn visit_print_stmt(&mut self, expr: &Expr) -> StmtResult {
+        let value = self.evaluate(expr)?;
+        println!(" > {}", value);
+        self.result = None;
+        Ok(())
+    }
+
+    fn visit_while_stmt(&mut self, stmt: &WhileStmt) -> StmtResult {
+        let WhileStmt { test, body } = stmt;
+
+        while self.evaluate(test)?.is_truthy() {
+            self.execute(body)?;
+        }
+        Ok(())
     }
 }
 

@@ -1,0 +1,11 @@
+let a =11
+let b = 3
+if (a-b<0) {
+    // print "a < b"
+    a
+} else if(a - b >0) {
+    //print "a > b"
+    b
+} else {
+    print a
+}

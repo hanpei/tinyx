@@ -28,6 +28,10 @@ impl Environment {
         Rc::new(RefCell::new(env))
     }
 
+    pub fn define(&mut self, name: &str, value: Value) {
+        self.store.insert(name.into(), value);
+    }
+
     pub fn lookup(&self, name: &str) -> Option<Value> {
         match self.store.get(name.into()) {
             Some(value) => Some(value.clone()),
@@ -36,10 +40,6 @@ impl Environment {
                 None => None,
             },
         }
-    }
-
-    pub fn define(&mut self, name: &str, value: Value) {
-        self.store.insert(name.into(), value);
     }
 
     pub fn assign(&mut self, name: &str, value: Value) -> Option<Value> {
