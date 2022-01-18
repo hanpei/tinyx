@@ -1,5 +1,5 @@
 use crate::{
-    ast::stmt::*,
+    ast::*,
     error::ParserError,
     token::{Keyword, Operator, TokenKind},
     ParseResult,

@@ -3,7 +3,7 @@ use std::{
     io::{BufReader, Read},
 };
 
-use tinyx::{evaluator::Interpreter, lexer::Lexer, parser::parser::Parser};
+use tinyx::{interpreter::Interpreter, lexer::Lexer, parser::parser::Parser};
 
 fn main() {
     let file = File::open("source.txt").unwrap();

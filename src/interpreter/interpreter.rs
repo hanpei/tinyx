@@ -1,19 +1,11 @@
-use std::{cell::RefCell, rc::Rc, result};
+use std::{cell::RefCell, rc::Rc};
 
-use crate::{
-    ast::{expr::*, stmt::*, Program},
-    error::EvalError,
-    token::Operator,
-    value::Value,
-};
+use crate::{ast::*, error::EvalError, token::Operator, value::Value};
 
-use self::{
+use super::{
     env::Environment,
     visitor::{ExprResult, ExprVisitor, StmtResult, StmtVisitor},
 };
-
-mod env;
-mod visitor;
 
 pub struct Interpreter {
     env: Rc<RefCell<Environment>>,
@@ -39,7 +31,7 @@ impl Interpreter {
         Ok(())
     }
 
-    fn eval_program(&mut self, program: Program) -> result::Result<(), EvalError> {
+    fn eval_program(&mut self, program: Program) -> StmtResult {
         for stmt in &program.body {
             self.execute(stmt)?;
         }

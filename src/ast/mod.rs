@@ -1,12 +1,14 @@
-use self::stmt::Statement;
-pub type Ast = Program;
-
 mod ast_display;
-pub mod expr;
-pub mod stmt;
+mod expr;
+mod stmt;
+
+pub use expr::*;
+pub use stmt::*;
 
 #[cfg(test)]
 mod tests;
+
+pub type Ast = Program;
 
 #[derive(Debug, PartialEq)]
 pub struct Program {

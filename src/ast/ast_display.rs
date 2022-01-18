@@ -102,7 +102,7 @@ impl Display for ReturnStatement {
 }
 impl Display for WhileStmt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "WhileLoop: ")?;
+        write!(f, "While: ")?;
         write!(f, "{{ ")?;
         write!(f, "test: {}, ", self.test)?;
         write!(f, "body: {}", self.body)?;
