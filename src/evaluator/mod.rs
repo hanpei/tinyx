@@ -156,7 +156,7 @@ impl ExprVisitor for Interpreter {
                 Operator::GreaterThan => Value::Boolean(l > r),
                 Operator::GreaterThanEqual => Value::Boolean(l >= r),
 
-                Operator::Assign | Operator::Not => return Err(op_err),
+                _ => return Err(op_err),
             }),
             _ => return Err(op_err),
         }
@@ -186,7 +186,7 @@ impl ExprVisitor for Interpreter {
 
     fn visit_assign(&mut self, assign: &AssignExpr) -> ExprResult {
         let AssignExpr { op, left, right } = assign;
-        match op {
+        match op.value {
             Operator::Assign => {
                 let Identifier { name, span } = left;
                 let value = self.evaluate(&*right)?;
@@ -209,5 +209,33 @@ impl ExprVisitor for Interpreter {
 
     fn visit_call(&mut self, call: &CallExpr) -> ExprResult {
         todo!()
+    }
+
+    fn visit_logical(&mut self, expr: &LogicalExpr) -> ExprResult {
+        let LogicalExpr { left, op, right } = expr;
+        let left = self.evaluate(left)?;
+        let right = self.evaluate(right)?;
+        let op_err = EvalError::SyntaxError(
+            format!("invalid operator at [{} {} {}]", left, op.value, right),
+            op.span(),
+        );
+
+        match op.value {
+            Operator::Or => {
+                if left.is_truthy() {
+                    Ok(left)
+                } else {
+                    Ok(right)
+                }
+            }
+            Operator::And => {
+                if !left.is_truthy() {
+                    Ok(left)
+                } else {
+                    Ok(right)
+                }
+            }
+            _ => Err(op_err),
+        }
     }
 }

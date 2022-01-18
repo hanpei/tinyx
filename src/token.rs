@@ -114,6 +114,9 @@ pub enum Operator {
     Div,
     Assign,
 
+    Or,
+    And,
+
     Not,
     Equal,
     NotEqual,
@@ -138,6 +141,8 @@ impl std::fmt::Display for Operator {
             Operator::LessThanEqual => write!(f, "<="),
             Operator::GreaterThan => write!(f, ">"),
             Operator::GreaterThanEqual => write!(f, ">="),
+            Operator::Or => write!(f, "or"),
+            Operator::And => write!(f, "and"),
         }
     }
 }
@@ -151,6 +156,9 @@ impl Operator {
             "*" => Mul,
             "/" => Div,
             "=" => Assign,
+
+            "||" => Or,
+            "&&" => And,
 
             "!" => Not,
             "==" => Equal,

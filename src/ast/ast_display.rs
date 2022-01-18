@@ -122,6 +122,7 @@ impl Display for Expr {
             Expr::Assign(a) => write!(f, "{}", a),
             Expr::Call(c) => write!(f, "{}", c),
             Expr::NullLiteral => write!(f, "null"),
+            Expr::Logical(l) => write!(f, "{}", l),
         }
     }
 }
@@ -151,8 +152,17 @@ impl Display for AssignExpr {
         write!(
             f,
             "left: {}, op: {}, right: {}",
-            self.left, self.op, self.right
+            self.left, self.op.value, self.right
         )?;
+        write!(f, " }}")
+    }
+}
+
+impl Display for LogicalExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Logical: ")?;
+        write!(f, "{{ ")?;
+        write!(f, "{} {} {}", self.left, self.op.value, self.right)?;
         write!(f, " }}")
     }
 }

@@ -10,6 +10,7 @@ pub enum Expr {
     BooleanLiteral(bool),
     NullLiteral,
     Binary(BinaryExpr),
+    Logical(LogicalExpr),
     Unary(UnaryExpr),
     Identifier(Identifier),
     Assign(AssignExpr),
@@ -86,13 +87,13 @@ impl Identifier {
 
 #[derive(Debug, PartialEq)]
 pub struct AssignExpr {
-    pub op: Operator,
+    pub op: WithSpan<Operator>,
     pub left: Identifier,
     pub right: Box<Expr>,
 }
 
 impl AssignExpr {
-    pub fn new(op: Operator, left: Identifier, right: Expr) -> Self {
+    pub fn new(op: WithSpan<Operator>, left: Identifier, right: Expr) -> Self {
         Self {
             op,
             left,
@@ -102,7 +103,6 @@ impl AssignExpr {
 }
 
 pub type ArgumentList = Option<Vec<Box<Expr>>>;
-
 #[derive(Debug, PartialEq)]
 pub struct CallExpr {
     pub callee: Identifier,
@@ -112,5 +112,22 @@ pub struct CallExpr {
 impl CallExpr {
     pub fn new(callee: Identifier, arguments: ArgumentList) -> Self {
         Self { callee, arguments }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct LogicalExpr {
+    pub left: Box<Expr>,
+    pub op: WithSpan<Operator>,
+    pub right: Box<Expr>,
+}
+
+impl LogicalExpr {
+    pub fn new(left: Expr, op: WithSpan<Operator>, right: Expr) -> Self {
+        Self {
+            left: Box::new(left),
+            op,
+            right: Box::new(right),
+        }
     }
 }

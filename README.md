@@ -61,8 +61,16 @@ Expression:
     ;
 
 AssignmentExpression:
-    : EqualityExpression
-    | Identifier "=" AssignmentExpression
+    : Identifier "=" AssignmentExpression
+    | LogicORExpression
+    ;
+
+LogicORExpression:
+    : LogicANDExpress ( "or" LogicANDExpress )*
+    ;
+
+LogicANDExpress:
+    : EqualityExpression ( "and" EqualityExpression )*
     ;
 
 EqualityExpression

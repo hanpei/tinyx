@@ -79,7 +79,7 @@ impl<'a> Lexer<'a> {
                             self.read_operator(c, start)?
                         }
                     }
-                    b'+' | b'-' | b'*' | b'=' | b'>' | b'<' | b'!' => {
+                    b'+' | b'-' | b'*' | b'=' | b'>' | b'<' | b'!' | b'|' | b'&' => {
                         self.read_operator(c, start)?
                     }
                     b',' => Token::new(TokenKind::Comma, ",".to_string(), start, self.pos()),
@@ -188,6 +188,32 @@ impl<'a> Lexer<'a> {
                     self.advance();
                 } else {
                     buf.push(x as char)
+                }
+            }
+            x @ b'|' => {
+                if self.peek() == Some(b'|') {
+                    buf.push(x as char);
+                    buf.push('|');
+                    self.advance();
+                } else {
+                    return Err(ParserError::invalid_charactor(
+                        self.filename,
+                        '.',
+                        self.pos(),
+                    ));
+                }
+            }
+            x @ b'&' => {
+                if self.peek() == Some(b'&') {
+                    buf.push(x as char);
+                    buf.push('&');
+                    self.advance();
+                } else {
+                    return Err(ParserError::invalid_charactor(
+                        self.filename,
+                        '.',
+                        self.pos(),
+                    ));
                 }
             }
             _ => unimplemented!(),

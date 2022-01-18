@@ -13,10 +13,14 @@ pub enum Value {
 
 impl Value {
     pub fn is_truthy(&self) -> bool {
-        if let Value::Boolean(b) = self {
-            *b == true
-        } else {
-            false
+        match self {
+            Value::Boolean(b) => *b == true,
+            Value::Null => false,
+            // Value::String(_) => todo!(),
+            // Value::Number(_) => todo!(),
+            // Value::Array(_) => todo!(),
+            // Value::Object(_) => todo!(),
+            _ => true,
         }
     }
 }

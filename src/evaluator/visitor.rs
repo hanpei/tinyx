@@ -46,6 +46,7 @@ pub trait ExprVisitor {
             Expr::Assign(a) => self.visit_assign(a),
             Expr::Call(c) => self.visit_call(c),
             Expr::NullLiteral => self.visit_null(),
+            Expr::Logical(l) => self.visit_logical(l),
         }
     }
 
@@ -54,6 +55,7 @@ pub trait ExprVisitor {
     fn visit_assign(&mut self, assign: &AssignExpr) -> ExprResult;
     fn visit_ident(&mut self, ident: &Identifier) -> ExprResult;
     fn visit_call(&mut self, call: &CallExpr) -> ExprResult;
+    fn visit_logical(&mut self, expr: &LogicalExpr) -> ExprResult;
 
     // literal ===============================
     fn visit_numeric(&mut self, lit: &NumericLiteral) -> ExprResult {

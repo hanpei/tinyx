@@ -19,6 +19,68 @@ impl<'a> Parser<'a> {
     }
 
     /**
+     * AssignmentExpression:
+     *      : IDENTIFIER "=" AssignmentExpression
+     *      | LogicORExpression
+     *      ;
+     */
+    pub(super) fn parse_assign_expr(&mut self) -> ParseResult<Expr> {
+        let left = self.parse_logic_or_expr()?;
+
+        if !self.token_is(TokenKind::Operator(Operator::Assign)) {
+            return Ok(left);
+        }
+
+        let span_op = self.parse_op();
+
+        match left {
+            Expr::Identifier(ident) => Ok(Expr::Assign(AssignExpr::new(
+                span_op,
+                ident,
+                self.parse_assign_expr()?,
+            ))),
+            _ => {
+                return Err(ParserError::invalid_assignment(
+                    self.lexer.filename,
+                    span_op.loc.start,
+                ));
+            }
+        }
+    }
+
+    /**
+     * LogicORExpression:
+     *      : LogicANDExpress ( "or" LogicANDExpress )*
+     *      ;
+     */
+    pub(super) fn parse_logic_or_expr(&mut self) -> ParseResult<Expr> {
+        let mut left = self.parse_logic_and_expr()?;
+        while self.token_is(TokenKind::Operator(Operator::Or)) {
+            let span_op = self.parse_op();
+            let right = self.parse_logic_and_expr()?;
+
+            left = Expr::Logical(LogicalExpr::new(left, span_op, right))
+        }
+        Ok(left)
+    }
+
+    /**
+     * LogicANDExpress:
+     *      : EqualityExpression ( "and" EqualityExpression )*
+     *      ;
+     */
+    pub(super) fn parse_logic_and_expr(&mut self) -> ParseResult<Expr> {
+        let mut left = self.parse_equality_expr()?;
+        while self.token_is(TokenKind::Operator(Operator::And)) {
+            let span_op = self.parse_op();
+            let right = self.parse_equality_expr()?;
+
+            left = Expr::Logical(LogicalExpr::new(left, span_op, right))
+        }
+        Ok(left)
+    }
+
+    /**
      *  EqualityExpression
      *      : RelationalExpression ( ( "!=" | "==" ) RelationalExpression )*
      *      ;
@@ -29,47 +91,12 @@ impl<'a> Parser<'a> {
             TokenKind::Operator(Operator::Equal),
             TokenKind::Operator(Operator::Equal),
         ]) {
-            let op = Operator::from_str(&self.current_token.raw);
-            let op_span =
-                WithSpan::new(op, self.lexer.filename.to_string(), self.current_token.loc);
-            self.consume();
+            let span_op = self.parse_op();
             let right = self.parse_relational_expr()?;
 
-            left = Expr::Binary(BinaryExpr::new(left, op_span, right))
+            left = Expr::Binary(BinaryExpr::new(left, span_op, right))
         }
         Ok(left)
-    }
-
-    /**
-     * AssignmentExpression:
-     *      : EqualityExpression
-     *      | IDENTIFIER "=" AssignmentExpression
-     *      ;
-     */
-    pub(super) fn parse_assign_expr(&mut self) -> ParseResult<Expr> {
-        let left = self.parse_equality_expr()?;
-
-        if !self.token_is(TokenKind::Operator(Operator::Assign)) {
-            return Ok(left);
-        }
-
-        let op = Operator::from_str(&self.current_token.raw);
-        let op_loc = self.current_token.loc;
-        self.consume();
-
-        match left {
-            Expr::Identifier(ident) => Ok(Expr::Assign(AssignExpr::new(
-                op,
-                ident,
-                self.parse_assign_expr()?,
-            ))),
-            _ => {
-                return Err(ParserError::invalid_assignment(
-                    self.lexer.filename,
-                    op_loc.start,
-                ));
-            }
-        }
     }
 
     /**
@@ -83,11 +110,12 @@ impl<'a> Parser<'a> {
     /**
      * RelationalExpression
      *      : AdditiveExpression ( RELATIONAL_OPERATOR AdditiveExpression )*?
+     *      ;
      *
      * RELATIONAL_OPERATOR
      *      : ( "<" | "<=" | ">" | ">=" | "==" | "!=" )
+     *      ;
      */
-
     pub(super) fn parse_relational_expr(&mut self) -> ParseResult<Expr> {
         let mut left = self.parse_additive_expr()?;
         while self.expect_one_of(&[
@@ -98,13 +126,10 @@ impl<'a> Parser<'a> {
             TokenKind::Operator(Operator::Equal),
             TokenKind::Operator(Operator::NotEqual),
         ]) {
-            let op = Operator::from_str(&self.current_token.raw);
-            let op_span =
-                WithSpan::new(op, self.lexer.filename.to_string(), self.current_token.loc);
-            self.consume();
+            let span_op = self.parse_op();
             let right = self.parse_additive_expr()?;
 
-            left = Expr::Binary(BinaryExpr::new(left, op_span, right));
+            left = Expr::Binary(BinaryExpr::new(left, span_op, right));
         }
         Ok(left)
     }
@@ -120,13 +145,10 @@ impl<'a> Parser<'a> {
             TokenKind::Operator(Operator::Add),
             TokenKind::Operator(Operator::Min),
         ]) {
-            let op = Operator::from_str(&self.current_token.raw);
-            let op_span =
-                WithSpan::new(op, self.lexer.filename.to_string(), self.current_token.loc);
-            self.consume();
+            let span_op = self.parse_op();
             let right = self.parse_mul_expr()?;
 
-            left = Expr::Binary(BinaryExpr::new(left, op_span, right));
+            left = Expr::Binary(BinaryExpr::new(left, span_op, right));
         }
         Ok(left)
     }
@@ -134,6 +156,7 @@ impl<'a> Parser<'a> {
     /**
      *  MultiplicativeExpression
      *      : UnaryExpression ((MUL|DIV) UnaryExpression)*
+     *      ;
      */
     pub(super) fn parse_mul_expr(&mut self) -> ParseResult<Expr> {
         let mut left = self.parse_unary_expr()?;
@@ -141,13 +164,10 @@ impl<'a> Parser<'a> {
             TokenKind::Operator(Operator::Mul),
             TokenKind::Operator(Operator::Div),
         ]) {
-            let op = Operator::from_str(&self.current_token.raw);
-            let op_span =
-                WithSpan::new(op, self.lexer.filename.to_string(), self.current_token.loc);
-            self.consume();
+            let span_op = self.parse_op();
             let right = self.parse_unary_expr()?;
 
-            left = Expr::Binary(BinaryExpr::new(left, op_span, right));
+            left = Expr::Binary(BinaryExpr::new(left, span_op, right));
         }
         Ok(left)
     }
@@ -163,13 +183,9 @@ impl<'a> Parser<'a> {
             TokenKind::Operator(Operator::Min),
             TokenKind::Operator(Operator::Not),
         ]) {
-            // self.parse_unary_expr()?;
-            let op = Operator::from_str(&self.current_token.raw);
-            let op_span =
-                WithSpan::new(op, self.lexer.filename.to_string(), self.current_token.loc);
-            self.consume();
+            let span_op = self.parse_op();
             let argument = self.parse_unary_expr()?;
-            return Ok(Expr::Unary(UnaryExpr::new(op_span, argument)));
+            return Ok(Expr::Unary(UnaryExpr::new(span_op, argument)));
         }
 
         self.parse_call_expr()
@@ -178,6 +194,7 @@ impl<'a> Parser<'a> {
     /**
      * CallExpression
      *      : PrimaryExpression ( "(" Arguments? ")" )*
+     *      ;
      */
     fn parse_call_expr(&mut self) -> ParseResult<Expr> {
         let expr = self.parse_primary_expr()?;
@@ -202,6 +219,7 @@ impl<'a> Parser<'a> {
     /**
      * Arguments
      *      : Expression ("," Expression)*
+     *      ;
      */
     fn parse_arguments(&mut self) -> ParseResult<ArgumentList> {
         if !self.token_is(TokenKind::ParenClose) {
@@ -287,6 +305,7 @@ impl<'a> Parser<'a> {
     /**
      *  Identifier
      *      :IDENTIFIER
+     *      ;
      */
     pub fn parse_identifier(&mut self) -> ParseResult<Identifier> {
         self.expect(TokenKind::Identifier)?;
@@ -297,5 +316,12 @@ impl<'a> Parser<'a> {
         );
         self.consume();
         Ok(expr)
+    }
+
+    fn parse_op(&mut self) -> WithSpan<Operator> {
+        let op = Operator::from_str(&self.current_token.raw);
+        let op_span = WithSpan::new(op, self.lexer.filename.to_string(), self.current_token.loc);
+        self.consume();
+        op_span
     }
 }
