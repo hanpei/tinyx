@@ -1,7 +1,7 @@
 use core::fmt;
-use std::{collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::ast::Statement;
+use crate::{ast::Statement, interpreter::Environment};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Value {
@@ -9,7 +9,7 @@ pub enum Value {
     String(String),
     Boolean(bool),
     Number(f64),
-    Function(Rc<Function>),
+    Function(Function),
     Array(Vec<Value>),
     Object(HashMap<String, Value>),
 }
@@ -65,7 +65,7 @@ fn fmt_obj(obj: &HashMap<String, Value>, f: &mut fmt::Formatter<'_>) -> fmt::Res
     )
 }
 
-fn fmt_fn(fun: &Rc<Function>, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+fn fmt_fn(fun: &Function, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(
         f,
         "[Function <{}>]",
@@ -76,19 +76,26 @@ fn fmt_fn(fun: &Rc<Function>, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     )
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Function {
     pub name: Option<String>,
     pub params: Vec<String>,
     pub body: Box<Statement>,
+    pub scope: Rc<RefCell<Environment>>,
 }
 
 impl Function {
-    pub fn new(name: Option<String>, params: Vec<String>, body: Statement) -> Self {
+    pub fn new(
+        name: Option<String>,
+        params: Vec<String>,
+        body: Statement,
+        scope: Rc<RefCell<Environment>>,
+    ) -> Self {
         Function {
             name,
             params,
             body: Box::new(body),
+            scope,
         }
     }
 }

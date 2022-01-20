@@ -68,14 +68,14 @@ impl FunctionDeclaration {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct ReturnStatement {
-    pub argument: Option<Box<Expr>>,
+    pub argument: Option<Expr>,
 }
 
 impl ReturnStatement {
     pub fn new(argument: Option<Expr>) -> Self {
         Self {
             argument: match argument {
-                Some(expr) => Some(Box::new(expr)),
+                Some(expr) => Some(expr),
                 None => None,
             },
         }

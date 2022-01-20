@@ -201,7 +201,11 @@ impl<'a> Parser<'a> {
 
         while self.token_is(TokenKind::ParenOpen) {
             self.eat(TokenKind::ParenOpen)?;
-            let arguments = self.parse_arguments()?;
+
+            let mut arguments: ArgumentList = Vec::new();
+            if !self.token_is(TokenKind::ParenClose) {
+                arguments = self.parse_arguments()?;
+            }
             self.eat(TokenKind::ParenClose)?;
             expr = Expr::Call(CallExpr::new(expr, arguments));
         }
@@ -215,26 +219,22 @@ impl<'a> Parser<'a> {
      *      ;
      */
     fn parse_arguments(&mut self) -> ParseResult<ArgumentList> {
-        if !self.token_is(TokenKind::ParenClose) {
-            let mut list = Vec::new();
-            let expr = self.parse_expression()?;
-            list.push(Box::new(expr));
-            while self.token_is(TokenKind::Comma) {
-                self.consume();
-                // arguments limit
-                if list.len() >= MAXIMUM_ARGS {
-                    return Err(ParserError::maximum_size_error(
-                        self.lexer.filename,
-                        self.current_token.loc.start,
-                    ));
-                }
-                let expr = self.parse_expression()?;
-                list.push(Box::new(expr));
+        let mut list = Vec::new();
+        let expr = self.parse_expression()?;
+        list.push(expr);
+        while self.token_is(TokenKind::Comma) {
+            self.consume();
+            // arguments limit
+            if list.len() >= MAXIMUM_ARGS {
+                return Err(ParserError::maximum_size_error(
+                    self.lexer.filename,
+                    self.current_token.loc.start,
+                ));
             }
-            Ok(Some(list))
-        } else {
-            Ok(None)
+            let expr = self.parse_expression()?;
+            list.push(expr);
         }
+        Ok(list)
     }
 
     /**

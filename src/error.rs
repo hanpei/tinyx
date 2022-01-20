@@ -65,6 +65,7 @@ impl ParserError {
 pub enum RuntimeError {
     SyntaxError(String, Span),
     ReferenceError(String, Span),
+    Error(String), // TODO: add span
 }
 
 impl std::fmt::Display for RuntimeError {
@@ -80,6 +81,7 @@ impl std::fmt::Display for RuntimeError {
                 "ReferenceError: {} is not defined, at: {}:{}:{}",
                 variabale, span.filename, span.loc.start.ln, span.loc.start.col
             ),
+            RuntimeError::Error(msg) => write!(f, "ReferenceError: {}", msg),
         }
     }
 }

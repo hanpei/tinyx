@@ -1,6 +1,6 @@
-function sum(x, y) {
-    return x + y
+fn sum(x, y) {
+    return x +y
 }
+let v = sum(1,2)
 
-sum(1, 2)
-
+print sum(1,4)

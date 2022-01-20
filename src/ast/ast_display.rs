@@ -171,10 +171,10 @@ impl Display for CallExpr {
         write!(f, "{{ ")?;
         write!(f, "callee: {}, ", self.callee)?;
 
-        if let Some(args) = &self.arguments {
+        if self.arguments.len() > 0 {
             write!(f, "args: [ ")?;
-            for (i, arg) in args.iter().enumerate() {
-                if i == args.len() - 1 {
+            for (i, arg) in self.arguments.iter().enumerate() {
+                if i == self.arguments.len() - 1 {
                     write!(f, "{}", arg)?;
                 } else {
                     write!(f, "{}, ", arg)?;

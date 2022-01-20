@@ -186,7 +186,7 @@ impl<'a> Parser<'a> {
         let id = self.parse_identifier()?;
 
         self.eat(TokenKind::ParenOpen)?;
-        let mut params: Vec<Identifier> = Vec::new();
+        let mut params: ParamList = Vec::new();
         if !self.token_is(TokenKind::ParenClose) {
             params = self.parse_params()?;
         }

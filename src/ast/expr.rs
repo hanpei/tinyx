@@ -108,7 +108,7 @@ impl AssignExpr {
     }
 }
 
-pub type ArgumentList = Option<Vec<Box<Expr>>>;
+pub type ArgumentList = Vec<Expr>;
 #[derive(Debug, PartialEq, Clone)]
 pub struct CallExpr {
     pub callee: Box<Expr>,

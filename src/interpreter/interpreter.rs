@@ -9,6 +9,7 @@ use crate::{
 };
 
 use super::{
+    callable::Callable,
     env::Environment,
     visitor::{ExprVisitor, StmtVisitor},
 };
@@ -44,11 +45,11 @@ impl Interpreter {
         Ok(())
     }
 
-    fn evaluate(&mut self, expr: &Expr) -> EvalResult<Value> {
+    pub fn evaluate(&mut self, expr: &Expr) -> EvalResult<Value> {
         self.visit_expr(expr)
     }
 
-    fn execute(&mut self, stmt: &Statement) -> EvalResult<()> {
+    pub fn execute(&mut self, stmt: &Statement) -> EvalResult<()> {
         self.visit_stmt(stmt)
     }
 }
@@ -89,14 +90,17 @@ impl StmtVisitor for Interpreter {
 
     fn visit_function_declare(&mut self, decl: &FunctionDeclaration) -> Self::Item {
         let FunctionDeclaration { id, params, body } = decl;
+
         let func = Function::new(
             Some(id.name.to_string()),
             params.iter().map(|i| i.name.to_string()).collect(),
             *body.clone(),
+            self.env.clone(),
         );
+
         self.env
             .borrow_mut()
-            .define(id.name.to_string(), Value::Function(Rc::new(func)));
+            .define(id.name.to_string(), Value::Function(func));
         Ok(())
     }
 
@@ -119,7 +123,13 @@ impl StmtVisitor for Interpreter {
     }
 
     fn visit_return_stmt(&mut self, stmt: &ReturnStatement) -> Self::Item {
-        todo!()
+        let ReturnStatement { argument } = stmt;
+
+        if let Some(expr) = argument {
+            let value = self.evaluate(expr)?;
+            self.result = Some(value);
+        }
+        Ok(())
     }
 
     fn visit_print_stmt(&mut self, expr: &Expr) -> Self::Item {
@@ -227,7 +237,16 @@ impl ExprVisitor for Interpreter {
     fn visit_call(&mut self, call: &CallExpr) -> Self::Item {
         let CallExpr { callee, arguments } = call;
 
-        todo!()
+        let value = self.evaluate(callee)?;
+        match value {
+            Value::Function(function) => function.call(self, arguments)?,
+            _ => return Err(RuntimeError::Error("invalid callee".to_string())),
+        }
+        if let Some(r) = &self.result {
+            Ok(r.clone())
+        } else {
+            Ok(Value::Null)
+        }
     }
 
     fn visit_logical(&mut self, expr: &LogicalExpr) -> Self::Item {
