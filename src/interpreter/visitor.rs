@@ -1,15 +1,13 @@
-use crate::{ast::*, value::Value, EvalResult};
-
-pub type StmtResult = EvalResult<()>;
-pub type ExprResult = EvalResult<Value>;
+use crate::ast::*;
 
 // stmt ===============================
 pub trait StmtVisitor {
-    fn visit_stmt(&mut self, stmt: &Statement) -> StmtResult {
+    type Item;
+    fn visit_stmt(&mut self, stmt: &Statement) -> Self::Item {
         match stmt {
             Statement::ExprStmt(expr) => self.visit_expr_stmt(expr),
             Statement::Block(block) => self.visit_block(block),
-            Statement::Empty => Ok(()),
+            Statement::Empty => self.visit_empty(),
             Statement::VariableDeclaration(delc) => self.visit_variable_declare(delc),
             Statement::FunctionDeclaration(delc) => self.visit_function_declare(delc),
             Statement::If(i) => self.visit_if_stmt(i),
@@ -19,19 +17,22 @@ pub trait StmtVisitor {
         }
     }
 
-    fn visit_expr_stmt(&mut self, expr: &Expr) -> StmtResult;
-    fn visit_block(&mut self, block: &Vec<Statement>) -> StmtResult;
-    fn visit_variable_declare(&mut self, decl: &VariableDeclaration) -> StmtResult;
-    fn visit_function_declare(&mut self, decl: &FunctionDeclaration) -> StmtResult;
-    fn visit_if_stmt(&mut self, stmt: &IfStatement) -> StmtResult;
-    fn visit_return_stmt(&mut self, stmt: &ReturnStatement) -> StmtResult;
-    fn visit_print_stmt(&mut self, expr: &Expr) -> StmtResult;
-    fn visit_while_stmt(&mut self, stmt: &WhileStmt) -> StmtResult;
+    fn visit_expr_stmt(&mut self, expr: &Expr) -> Self::Item;
+    fn visit_block(&mut self, block: &Vec<Statement>) -> Self::Item;
+    fn visit_empty(&mut self) -> Self::Item;
+    fn visit_variable_declare(&mut self, decl: &VariableDeclaration) -> Self::Item;
+    fn visit_function_declare(&mut self, decl: &FunctionDeclaration) -> Self::Item;
+    fn visit_if_stmt(&mut self, stmt: &IfStatement) -> Self::Item;
+    fn visit_return_stmt(&mut self, stmt: &ReturnStatement) -> Self::Item;
+    fn visit_print_stmt(&mut self, expr: &Expr) -> Self::Item;
+    fn visit_while_stmt(&mut self, stmt: &WhileStmt) -> Self::Item;
 }
 
 // expr ===============================
 pub trait ExprVisitor {
-    fn visit_expr(&mut self, expr: &Expr) -> ExprResult {
+    type Item;
+
+    fn visit_expr(&mut self, expr: &Expr) -> Self::Item {
         match expr {
             Expr::NumericLiteral(n) => self.visit_numeric(n),
             Expr::StringLiteral(s) => self.visit_string(s),
@@ -46,24 +47,16 @@ pub trait ExprVisitor {
         }
     }
 
-    fn visit_binary(&mut self, binary: &BinaryExpr) -> ExprResult;
-    fn visit_unary(&mut self, unary: &UnaryExpr) -> ExprResult;
-    fn visit_assign(&mut self, assign: &AssignExpr) -> ExprResult;
-    fn visit_ident(&mut self, ident: &Identifier) -> ExprResult;
-    fn visit_call(&mut self, call: &CallExpr) -> ExprResult;
-    fn visit_logical(&mut self, expr: &LogicalExpr) -> ExprResult;
+    fn visit_binary(&mut self, binary: &BinaryExpr) -> Self::Item;
+    fn visit_unary(&mut self, unary: &UnaryExpr) -> Self::Item;
+    fn visit_assign(&mut self, assign: &AssignExpr) -> Self::Item;
+    fn visit_ident(&mut self, ident: &Identifier) -> Self::Item;
+    fn visit_call(&mut self, call: &CallExpr) -> Self::Item;
+    fn visit_logical(&mut self, expr: &LogicalExpr) -> Self::Item;
 
     // literal ===============================
-    fn visit_numeric(&mut self, lit: &NumericLiteral) -> ExprResult {
-        Ok(Value::Number(lit.value))
-    }
-    fn visit_string(&mut self, lit: &StringLiteral) -> ExprResult {
-        Ok(Value::String(lit.value.to_string()))
-    }
-    fn visit_boolean(&mut self, lit: bool) -> ExprResult {
-        Ok(Value::Boolean(lit))
-    }
-    fn visit_null(&mut self) -> ExprResult {
-        Ok(Value::Null)
-    }
+    fn visit_numeric(&mut self, lit: &NumericLiteral) -> Self::Item;
+    fn visit_string(&mut self, lit: &StringLiteral) -> Self::Item;
+    fn visit_boolean(&mut self, lit: bool) -> Self::Item;
+    fn visit_null(&mut self) -> Self::Item;
 }

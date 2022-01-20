@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{error::EvalError, value::Value, EvalResult};
+use crate::value::Value;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct Environment {
@@ -28,8 +28,8 @@ impl Environment {
         Rc::new(RefCell::new(env))
     }
 
-    pub fn define(&mut self, name: &str, value: Value) {
-        self.store.insert(name.into(), value);
+    pub fn define(&mut self, name: String, value: Value) {
+        self.store.insert(name, value);
     }
 
     pub fn lookup(&self, name: &str) -> Option<Value> {
@@ -67,7 +67,9 @@ mod tests {
         let first = Environment::default();
         let second = Environment::extends(&first);
 
-        first.borrow_mut().define("foo", Value::Number(42.0));
+        first
+            .borrow_mut()
+            .define("foo".to_string(), Value::Number(42.0));
 
         let a = first.borrow().lookup("foo").unwrap();
         let b = second.borrow().lookup("foo").unwrap();
@@ -80,9 +82,11 @@ mod tests {
     #[test]
     fn env_assign() {
         let first = Environment::default();
-        let mut second = Environment::extends(&first);
+        let second = Environment::extends(&first);
 
-        first.borrow_mut().define("foo", Value::Number(42.0));
+        first
+            .borrow_mut()
+            .define("foo".to_string(), Value::Number(42.0));
         second.borrow_mut().assign("foo", Value::Number(1.0));
 
         assert_eq!(

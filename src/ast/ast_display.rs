@@ -75,17 +75,15 @@ impl Display for FunctionDeclaration {
         write!(f, "Function: ")?;
         write!(f, "{{ ")?;
         write!(f, "ident: {}, ", self.id)?;
-        if let Some(idents) = &self.params {
-            write!(f, "params: [ ")?;
-            for (i, ident) in idents.iter().enumerate() {
-                if i == idents.len() - 1 {
-                    write!(f, "{}", ident)?;
-                } else {
-                    write!(f, "{}, ", ident)?;
-                }
+        write!(f, "params: [ ")?;
+        for (i, ident) in self.params.iter().enumerate() {
+            if i == self.params.len() - 1 {
+                write!(f, "{}", ident)?;
+            } else {
+                write!(f, "{}, ", ident)?;
             }
-            write!(f, " ], ")?;
         }
+        write!(f, " ], ")?;
         write!(f, "body: {}", self.body)?;
         write!(f, " }}")
     }
@@ -184,7 +182,7 @@ impl Display for CallExpr {
             }
             write!(f, " ]")?;
         } else {
-            write!(f, "[]")?;
+            write!(f, "args: []")?;
         }
         write!(f, " }}")
     }

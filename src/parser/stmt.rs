@@ -5,7 +5,7 @@ use crate::{
     ParseResult,
 };
 
-use super::parser::Parser;
+use super::{parser::Parser, MAXIMUM_ARGS};
 
 impl<'a> Parser<'a> {
     /**
@@ -172,39 +172,53 @@ impl<'a> Parser<'a> {
     }
 
     /**
-     *  FunctionDeclaration
-     *      : "function" Identifier ( "(" ( FormalParameterList )? ")" ) FunctionBody
-     *
-     *  FormalParameterList
-     *      : Identifier ( "," Identifier )*
-     *
-     *  FunctionBody
-     *      : "{" ( Statement )? "}"
-     */
+    *  FunctionDeclaration
+    *      : "function" Identifier "(" ( ParameterList )? ")" BlockStatement
+    *      ;
+    *
+    *  ParameterList
+    *      : Identifier ( "," Identifier )*
+    *      ;
+
+    */
     fn parse_fn_declaration_stmt(&mut self) -> ParseResult<Statement> {
         self.eat(TokenKind::Keyword(Keyword::Fn))?;
         let id = self.parse_identifier()?;
-        self.eat(TokenKind::ParenOpen)?;
 
-        let mut ids = Vec::new();
-        let params = if self.current_token.kind != TokenKind::ParenClose {
-            loop {
-                let id = self.parse_identifier()?;
-                ids.push(id);
-                if self.token_is(TokenKind::Comma) {
-                    self.consume();
-                } else {
-                    break;
-                }
-            }
-            Some(ids)
-        } else {
-            None
-        };
+        self.eat(TokenKind::ParenOpen)?;
+        let mut params: Vec<Identifier> = Vec::new();
+        if !self.token_is(TokenKind::ParenClose) {
+            params = self.parse_params()?;
+        }
         self.eat(TokenKind::ParenClose)?;
+
         let body = self.parse_block_stmt()?;
         let stmt = FunctionDeclaration::new(id, params, body);
         Ok(Statement::FunctionDeclaration(stmt))
+    }
+
+    /**
+     * ParameterList
+     *      : Identifier ( "," Identifier )*
+     *      ;
+     */
+    fn parse_params(&mut self) -> ParseResult<ParamList> {
+        let mut list = Vec::new();
+        let ident = self.parse_identifier()?;
+        list.push(ident);
+        while self.token_is(TokenKind::Comma) {
+            self.consume();
+            // paramlist limit
+            if list.len() >= MAXIMUM_ARGS {
+                return Err(ParserError::maximum_size_error(
+                    self.lexer.filename,
+                    self.current_token.loc.start,
+                ));
+            }
+            let ident = self.parse_identifier()?;
+            list.push(ident);
+        }
+        Ok(list)
     }
 
     /**

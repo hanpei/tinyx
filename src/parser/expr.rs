@@ -6,7 +6,7 @@ use crate::{
     ParseResult,
 };
 
-use super::parser::Parser;
+use super::{parser::Parser, MAXIMUM_ARGS};
 
 impl<'a> Parser<'a> {
     /**
@@ -103,7 +103,7 @@ impl<'a> Parser<'a> {
      * LeftHandSideExpression
      *      | todo..
      */
-    pub(super) fn parse_left_hand_side_expr(&mut self) -> ParseResult<Expr> {
+    pub(super) fn _parse_left_hand_side_expr(&mut self) -> ParseResult<Expr> {
         todo!()
     }
 
@@ -197,23 +197,16 @@ impl<'a> Parser<'a> {
      *      ;
      */
     fn parse_call_expr(&mut self) -> ParseResult<Expr> {
-        let expr = self.parse_primary_expr()?;
-        if self.token_is(TokenKind::ParenOpen) {
-            if let Expr::Identifier(ident) = expr {
-                self.eat(TokenKind::ParenOpen)?;
-                let arguments = self.parse_arguments().unwrap();
-                self.eat(TokenKind::ParenClose)?;
-                let expr = CallExpr::new(ident, arguments);
-                Ok(Expr::Call(expr))
-            } else {
-                return Err(ParserError::invalid_token(
-                    self.lexer.filename,
-                    self.current_token.loc.start,
-                ));
-            }
-        } else {
-            Ok(expr)
+        let mut expr = self.parse_primary_expr()?;
+
+        while self.token_is(TokenKind::ParenOpen) {
+            self.eat(TokenKind::ParenOpen)?;
+            let arguments = self.parse_arguments()?;
+            self.eat(TokenKind::ParenClose)?;
+            expr = Expr::Call(CallExpr::new(expr, arguments));
         }
+
+        Ok(expr)
     }
 
     /**
@@ -228,6 +221,13 @@ impl<'a> Parser<'a> {
             list.push(Box::new(expr));
             while self.token_is(TokenKind::Comma) {
                 self.consume();
+                // arguments limit
+                if list.len() >= MAXIMUM_ARGS {
+                    return Err(ParserError::maximum_size_error(
+                        self.lexer.filename,
+                        self.current_token.loc.start,
+                    ));
+                }
                 let expr = self.parse_expression()?;
                 list.push(Box::new(expr));
             }
@@ -318,6 +318,9 @@ impl<'a> Parser<'a> {
         Ok(expr)
     }
 
+    /**
+     * helper
+     */
     fn parse_op(&mut self) -> WithSpan<Operator> {
         let op = Operator::from_str(&self.current_token.raw);
         let op_span = WithSpan::new(op, self.lexer.filename.to_string(), self.current_token.loc);

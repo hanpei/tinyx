@@ -1,10 +1,16 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{ast::*, error::EvalError, token::Operator, value::Value};
+use crate::{
+    ast::*,
+    error::RuntimeError,
+    token::Operator,
+    value::{Function, Value},
+    EvalResult,
+};
 
 use super::{
     env::Environment,
-    visitor::{ExprResult, ExprVisitor, StmtResult, StmtVisitor},
+    visitor::{ExprVisitor, StmtVisitor},
 };
 
 pub struct Interpreter {
@@ -20,7 +26,7 @@ impl Interpreter {
         }
     }
 
-    pub fn interpret(&mut self, program: Program) -> StmtResult {
+    pub fn interpret(&mut self, program: Program) -> EvalResult<()> {
         match self.eval_program(program) {
             Ok(()) => match &self.result {
                 Some(v) => println!(" > {}", v),
@@ -31,32 +37,34 @@ impl Interpreter {
         Ok(())
     }
 
-    fn eval_program(&mut self, program: Program) -> StmtResult {
+    fn eval_program(&mut self, program: Program) -> EvalResult<()> {
         for stmt in &program.body {
             self.execute(stmt)?;
         }
         Ok(())
     }
 
-    fn evaluate(&mut self, expr: &Expr) -> ExprResult {
+    fn evaluate(&mut self, expr: &Expr) -> EvalResult<Value> {
         self.visit_expr(expr)
     }
 
-    fn execute(&mut self, stmt: &Statement) -> StmtResult {
+    fn execute(&mut self, stmt: &Statement) -> EvalResult<()> {
         self.visit_stmt(stmt)
     }
 }
 
 impl StmtVisitor for Interpreter {
+    type Item = EvalResult<()>;
+
     // stmt
-    fn visit_expr_stmt(&mut self, expr: &Expr) -> StmtResult {
+    fn visit_expr_stmt(&mut self, expr: &Expr) -> Self::Item {
         let value = self.evaluate(expr)?;
         // 把ExpressionStatement最后一个expression的结果显示出来
         self.result = Some(value);
         Ok(())
     }
 
-    fn visit_block(&mut self, block: &Vec<Statement>) -> StmtResult {
+    fn visit_block(&mut self, block: &Vec<Statement>) -> Self::Item {
         let prev_env = Rc::clone(&self.env);
         self.env = Environment::extends(&self.env);
         for stmt in block {
@@ -66,22 +74,33 @@ impl StmtVisitor for Interpreter {
         Ok(())
     }
 
-    fn visit_variable_declare(&mut self, decl: &VariableDeclaration) -> StmtResult {
+    fn visit_variable_declare(&mut self, decl: &VariableDeclaration) -> Self::Item {
         let VariableDeclaration { id, init } = decl;
         let Identifier { name, .. } = id;
         let value = match init {
             Some(expr) => self.evaluate(expr)?,
             None => Value::Null,
         };
-        self.env.borrow_mut().define(&name, value.clone());
+        self.env
+            .borrow_mut()
+            .define(name.to_string(), value.clone());
         Ok(())
     }
 
-    fn visit_function_declare(&mut self, decl: &FunctionDeclaration) -> StmtResult {
-        todo!()
+    fn visit_function_declare(&mut self, decl: &FunctionDeclaration) -> Self::Item {
+        let FunctionDeclaration { id, params, body } = decl;
+        let func = Function::new(
+            Some(id.name.to_string()),
+            params.iter().map(|i| i.name.to_string()).collect(),
+            *body.clone(),
+        );
+        self.env
+            .borrow_mut()
+            .define(id.name.to_string(), Value::Function(Rc::new(func)));
+        Ok(())
     }
 
-    fn visit_if_stmt(&mut self, stmt: &IfStatement) -> StmtResult {
+    fn visit_if_stmt(&mut self, stmt: &IfStatement) -> Self::Item {
         let IfStatement {
             test,
             consequent,
@@ -99,18 +118,18 @@ impl StmtVisitor for Interpreter {
         Ok(())
     }
 
-    fn visit_return_stmt(&mut self, stmt: &ReturnStatement) -> StmtResult {
+    fn visit_return_stmt(&mut self, stmt: &ReturnStatement) -> Self::Item {
         todo!()
     }
 
-    fn visit_print_stmt(&mut self, expr: &Expr) -> StmtResult {
+    fn visit_print_stmt(&mut self, expr: &Expr) -> Self::Item {
         let value = self.evaluate(expr)?;
         println!(" > {}", value);
         self.result = None;
         Ok(())
     }
 
-    fn visit_while_stmt(&mut self, stmt: &WhileStmt) -> StmtResult {
+    fn visit_while_stmt(&mut self, stmt: &WhileStmt) -> Self::Item {
         let WhileStmt { test, body } = stmt;
 
         while self.evaluate(test)?.is_truthy() {
@@ -118,16 +137,22 @@ impl StmtVisitor for Interpreter {
         }
         Ok(())
     }
+
+    fn visit_empty(&mut self) -> Self::Item {
+        Ok(())
+    }
 }
 
 impl ExprVisitor for Interpreter {
+    type Item = EvalResult<Value>;
+
     // expr
-    fn visit_binary(&mut self, binary: &BinaryExpr) -> ExprResult {
+    fn visit_binary(&mut self, binary: &BinaryExpr) -> Self::Item {
         let BinaryExpr { left, op, right } = binary;
         let left = &self.evaluate(left)?;
         let right = &self.evaluate(right)?;
 
-        let op_err = EvalError::SyntaxError(
+        let op_err = RuntimeError::SyntaxError(
             format!("invalid operator at [{} {} {}]", left, op.value, right),
             op.span(),
         );
@@ -154,10 +179,10 @@ impl ExprVisitor for Interpreter {
         }
     }
 
-    fn visit_unary(&mut self, unary: &UnaryExpr) -> ExprResult {
+    fn visit_unary(&mut self, unary: &UnaryExpr) -> Self::Item {
         let UnaryExpr { op, argument } = unary;
         let value = self.evaluate(argument)?;
-        let op_err = EvalError::SyntaxError(
+        let op_err = RuntimeError::SyntaxError(
             format!("invalid operator at [{} {}]", op.value, value),
             op.span(),
         );
@@ -176,7 +201,7 @@ impl ExprVisitor for Interpreter {
         }
     }
 
-    fn visit_assign(&mut self, assign: &AssignExpr) -> ExprResult {
+    fn visit_assign(&mut self, assign: &AssignExpr) -> Self::Item {
         let AssignExpr { op, left, right } = assign;
         match op.value {
             Operator::Assign => {
@@ -184,30 +209,32 @@ impl ExprVisitor for Interpreter {
                 let value = self.evaluate(&*right)?;
                 match self.env.borrow_mut().assign(&name, value.clone()) {
                     Some(v) => Ok(v),
-                    None => return Err(EvalError::ReferenceError(name.into(), span.clone())),
+                    None => return Err(RuntimeError::ReferenceError(name.into(), span.clone())),
                 }
             }
             _ => unimplemented!(),
         }
     }
 
-    fn visit_ident(&mut self, ident: &Identifier) -> ExprResult {
+    fn visit_ident(&mut self, ident: &Identifier) -> Self::Item {
         let Identifier { name, span } = ident;
         match self.env.borrow().lookup(&name) {
             Some(value) => Ok(value),
-            None => return Err(EvalError::ReferenceError(name.to_string(), span.clone())),
+            None => return Err(RuntimeError::ReferenceError(name.to_string(), span.clone())),
         }
     }
 
-    fn visit_call(&mut self, call: &CallExpr) -> ExprResult {
+    fn visit_call(&mut self, call: &CallExpr) -> Self::Item {
+        let CallExpr { callee, arguments } = call;
+
         todo!()
     }
 
-    fn visit_logical(&mut self, expr: &LogicalExpr) -> ExprResult {
+    fn visit_logical(&mut self, expr: &LogicalExpr) -> Self::Item {
         let LogicalExpr { left, op, right } = expr;
         let left = self.evaluate(left)?;
         let right = self.evaluate(right)?;
-        let op_err = EvalError::SyntaxError(
+        let op_err = RuntimeError::SyntaxError(
             format!("invalid operator at [{} {} {}]", left, op.value, right),
             op.span(),
         );
@@ -229,5 +256,18 @@ impl ExprVisitor for Interpreter {
             }
             _ => Err(op_err),
         }
+    }
+
+    fn visit_numeric(&mut self, lit: &NumericLiteral) -> Self::Item {
+        Ok(Value::Number(lit.value))
+    }
+    fn visit_string(&mut self, lit: &StringLiteral) -> Self::Item {
+        Ok(Value::String(lit.value.to_string()))
+    }
+    fn visit_boolean(&mut self, lit: bool) -> Self::Item {
+        Ok(Value::Boolean(lit))
+    }
+    fn visit_null(&mut self) -> Self::Item {
+        Ok(Value::Null)
     }
 }

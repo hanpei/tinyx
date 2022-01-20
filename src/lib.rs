@@ -1,5 +1,4 @@
-use error::{EvalError, ParserError};
-use value::Value;
+use error::{ParserError, RuntimeError};
 
 pub mod ast;
 pub mod error;
@@ -11,4 +10,4 @@ pub mod token;
 pub mod value;
 
 pub type ParseResult<T> = std::result::Result<T, ParserError>;
-pub type EvalResult<T> = std::result::Result<T, EvalError>;
+pub type EvalResult<T> = std::result::Result<T, RuntimeError>;

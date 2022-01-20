@@ -1,5 +1,5 @@
 use crate::{
-    position::{Loc, Pos, Span},
+    position::{Pos, Span},
     token::TokenKind,
 };
 
@@ -24,6 +24,13 @@ impl ParserError {
 
     pub fn parse_number_error(file: &str, pos: Pos) -> ParserError {
         Self::ParseError(format!("invalid number at {}:{}:{}", file, pos.ln, pos.col))
+    }
+
+    pub fn maximum_size_error(file: &str, pos: Pos) -> ParserError {
+        Self::ParseError(format!(
+            "parse error: elements reach the maximum at {}:{}:{}",
+            file, pos.ln, pos.col
+        ))
     }
     pub fn invalid_token(file: &str, pos: Pos) -> ParserError {
         Self::InvalidToken(format!("invalid token at {}:{}:{}", file, pos.ln, pos.col))
@@ -54,20 +61,21 @@ impl ParserError {
     }
 }
 
-pub enum EvalError {
+#[derive(Debug)]
+pub enum RuntimeError {
     SyntaxError(String, Span),
     ReferenceError(String, Span),
 }
 
-impl std::fmt::Display for EvalError {
+impl std::fmt::Display for RuntimeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            EvalError::SyntaxError(msg, span) => write!(
+            RuntimeError::SyntaxError(msg, span) => write!(
                 f,
                 "Syntax Error: {}, at: {}:{}:{}",
                 msg, span.filename, span.loc.start.ln, span.loc.start.col
             ),
-            EvalError::ReferenceError(variabale, span) => write!(
+            RuntimeError::ReferenceError(variabale, span) => write!(
                 f,
                 "ReferenceError: {} is not defined, at: {}:{}:{}",
                 variabale, span.filename, span.loc.start.ln, span.loc.start.col

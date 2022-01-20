@@ -1,6 +1,6 @@
 use super::expr::{Expr, Identifier};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
     ExprStmt(Expr),
     Block(Vec<Statement>),
@@ -13,7 +13,7 @@ pub enum Statement {
     While(WhileStmt),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct WhileStmt {
     pub test: Box<Expr>,
     pub body: Box<Statement>,
@@ -28,7 +28,7 @@ impl WhileStmt {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct IfStatement {
     pub test: Box<Expr>,
     pub consequent: Box<Statement>,
@@ -48,15 +48,16 @@ impl IfStatement {
     }
 }
 
-#[derive(Debug, PartialEq)]
+pub type ParamList = Vec<Identifier>;
+#[derive(Debug, PartialEq, Clone)]
 pub struct FunctionDeclaration {
     pub id: Identifier,
-    pub params: Option<Vec<Identifier>>,
+    pub params: Vec<Identifier>,
     pub body: Box<Statement>,
 }
 
 impl FunctionDeclaration {
-    pub fn new(id: Identifier, params: Option<Vec<Identifier>>, body: Statement) -> Self {
+    pub fn new(id: Identifier, params: Vec<Identifier>, body: Statement) -> Self {
         Self {
             id,
             params,
@@ -65,7 +66,7 @@ impl FunctionDeclaration {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ReturnStatement {
     pub argument: Option<Box<Expr>>,
 }
@@ -81,7 +82,7 @@ impl ReturnStatement {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct VariableDeclaration {
     pub id: Identifier,
     pub init: Option<Expr>,

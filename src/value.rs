@@ -1,5 +1,7 @@
 use core::fmt;
-use std::collections::HashMap;
+use std::{collections::HashMap, rc::Rc};
+
+use crate::ast::Statement;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Value {
@@ -7,6 +9,7 @@ pub enum Value {
     String(String),
     Boolean(bool),
     Number(f64),
+    Function(Rc<Function>),
     Array(Vec<Value>),
     Object(HashMap<String, Value>),
 }
@@ -34,6 +37,7 @@ impl fmt::Display for Value {
             Value::Number(v) => write!(f, "{}", v),
             Value::Array(a) => fmt_array(a, f),
             Value::Object(o) => fmt_obj(o, f),
+            Value::Function(fun) => fmt_fn(fun, f),
         }
     }
 }
@@ -59,6 +63,34 @@ fn fmt_obj(obj: &HashMap<String, Value>, f: &mut fmt::Formatter<'_>) -> fmt::Res
             .collect::<Vec<String>>()
             .join(", ")
     )
+}
+
+fn fmt_fn(fun: &Rc<Function>, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(
+        f,
+        "[Function <{}>]",
+        match &fun.name {
+            Some(n) => n,
+            None => "anonymous",
+        }
+    )
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Function {
+    pub name: Option<String>,
+    pub params: Vec<String>,
+    pub body: Box<Statement>,
+}
+
+impl Function {
+    pub fn new(name: Option<String>, params: Vec<String>, body: Statement) -> Self {
+        Function {
+            name,
+            params,
+            body: Box::new(body),
+        }
+    }
 }
 
 #[cfg(test)]

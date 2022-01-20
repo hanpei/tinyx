@@ -3,7 +3,7 @@ use crate::{
     token::Operator,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
     NumericLiteral(NumericLiteral),
     StringLiteral(StringLiteral),
@@ -17,7 +17,7 @@ pub enum Expr {
     Call(CallExpr),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct StringLiteral {
     pub value: String,
     pub span: Span,
@@ -29,7 +29,7 @@ impl StringLiteral {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct NumericLiteral {
     pub value: f64,
     pub span: Span,
@@ -41,7 +41,7 @@ impl NumericLiteral {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct BinaryExpr {
     pub left: Box<Expr>,
     pub op: WithSpan<Operator>,
@@ -58,7 +58,7 @@ impl BinaryExpr {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct UnaryExpr {
     pub op: WithSpan<Operator>,
     pub argument: Box<Expr>,
@@ -73,7 +73,7 @@ impl UnaryExpr {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Identifier {
     pub name: String,
     pub span: Span,
@@ -85,7 +85,13 @@ impl Identifier {
     }
 }
 
-#[derive(Debug, PartialEq)]
+impl Into<String> for Identifier {
+    fn into(self) -> String {
+        self.name
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct AssignExpr {
     pub op: WithSpan<Operator>,
     pub left: Identifier,
@@ -103,19 +109,22 @@ impl AssignExpr {
 }
 
 pub type ArgumentList = Option<Vec<Box<Expr>>>;
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct CallExpr {
-    pub callee: Identifier,
+    pub callee: Box<Expr>,
     pub arguments: ArgumentList,
 }
 
 impl CallExpr {
-    pub fn new(callee: Identifier, arguments: ArgumentList) -> Self {
-        Self { callee, arguments }
+    pub fn new(callee: Expr, arguments: ArgumentList) -> Self {
+        Self {
+            callee: Box::new(callee),
+            arguments,
+        }
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct LogicalExpr {
     pub left: Box<Expr>,
     pub op: WithSpan<Operator>,

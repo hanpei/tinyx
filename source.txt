@@ -1,20 +1,6 @@
-// if stmt
-let a =11
-let b = 3
-if (a-b<0) {
-    // print "a < b"
-    a
-} else if(a - b >0) {
-    //print "a > b"
-    b
-} else {
-    print a
+function sum(x, y) {
+    return x + y
 }
 
+sum(1, 2)
 
-// while stmt
-let a = 1
-while (a<10) {
-    print a
-    a = a + 1
-}
