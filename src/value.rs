@@ -81,7 +81,7 @@ pub struct Function {
     pub name: Option<String>,
     pub params: Vec<String>,
     pub body: Box<Statement>,
-    pub scope: Rc<RefCell<Environment>>,
+    pub closure: Rc<RefCell<Environment>>,
 }
 
 impl Function {
@@ -89,13 +89,13 @@ impl Function {
         name: Option<String>,
         params: Vec<String>,
         body: Statement,
-        scope: Rc<RefCell<Environment>>,
+        closure: Rc<RefCell<Environment>>,
     ) -> Self {
         Function {
             name,
             params,
             body: Box::new(body),
-            scope,
+            closure,
         }
     }
 }

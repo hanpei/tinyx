@@ -59,8 +59,8 @@ impl std::fmt::Debug for Span {
         write!(f, "")
     }
 }
-impl<T> std::fmt::Debug for WithSpan<T> {
+impl<T: std::fmt::Debug> std::fmt::Debug for WithSpan<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "")
+        write!(f, "{:?}", self.value)
     }
 }

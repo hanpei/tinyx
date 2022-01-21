@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{borrow::Borrow, cell::RefCell, rc::Rc};
 
 use crate::{
     ast::*,
@@ -41,6 +41,10 @@ impl Interpreter {
         Ok(())
     }
 
+    pub fn set_env(&mut self, env: Rc<RefCell<Environment>>) {
+        self.env = env;
+    }
+
     fn eval_program(&mut self, program: Program) -> EvalResult<()> {
         for stmt in &program.body {
             self.execute(stmt)?;
@@ -54,6 +58,20 @@ impl Interpreter {
 
     pub fn execute(&mut self, stmt: &Statement) -> EvalResult<()> {
         self.visit_stmt(stmt)
+    }
+    pub fn execute_block(
+        &mut self,
+        block: &Vec<Statement>,
+        env: Rc<RefCell<Environment>>,
+    ) -> EvalResult<()> {
+        let prev_env = Rc::clone(&env);
+        self.env = Environment::extends(&env);
+
+        for stmt in block {
+            self.execute(stmt)?;
+        }
+        self.env = prev_env;
+        Ok(())
     }
 }
 
@@ -95,18 +113,19 @@ impl StmtVisitor for Interpreter {
     fn visit_function_declare(&mut self, decl: &FunctionDeclaration) -> Self::Item {
         let FunctionDeclaration { id, params, body } = decl;
 
-        let scope = Rc::clone(&self.env);
-        // println!("fn<{:?}>, {:#?}", id, scope);
+        let closure = Rc::clone(&self.env);
+
         let func = Function::new(
             Some(id.name.to_string()),
             params.iter().map(|i| i.name.to_string()).collect(),
             *body.clone(),
-            scope,
+            closure,
         );
 
         self.env
             .borrow_mut()
             .define(id.name.to_string(), Value::Function(func));
+
         Ok(())
     }
 
@@ -118,10 +137,18 @@ impl StmtVisitor for Interpreter {
         } = stmt;
         let test = self.evaluate(test)?;
         if test.is_truthy() {
+            let prev_env = Rc::clone(&self.env);
+            self.env = Environment::extends(&self.env);
             self.execute(&consequent)?;
+            self.env = prev_env;
         } else {
             match alternate {
-                Some(stmt) => self.execute(stmt)?,
+                Some(stmt) => {
+                    let prev_env = Rc::clone(&self.env);
+                    self.env = Environment::extends(&self.env);
+                    self.execute(stmt)?;
+                    self.env = prev_env;
+                }
                 None => (),
             }
         }
@@ -237,7 +264,7 @@ impl ExprVisitor for Interpreter {
 
     fn visit_ident(&mut self, ident: &Identifier) -> Self::Item {
         let Identifier { name, span } = ident;
-        match self.env.borrow().lookup(&name) {
+        match self.env.as_ref().borrow().lookup(&name) {
             Some(value) => Ok(value),
             None => return Err(RuntimeError::ReferenceError(name.to_string(), span.clone())),
         }
@@ -247,8 +274,13 @@ impl ExprVisitor for Interpreter {
         let CallExpr { callee, arguments } = call;
         let value = self.evaluate(callee)?;
 
+        let mut list = Vec::new();
+        for arg in arguments.iter() {
+            list.push(self.evaluate(arg)?);
+        }
+
         match value {
-            Value::Function(function) => function.call(self, arguments)?,
+            Value::Function(function) => function.call(self, list)?,
             _ => return Err(RuntimeError::Error("invalid callee".to_string())),
         }
 

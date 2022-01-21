@@ -1,10 +1,6 @@
-let a = "global";
-{
-  fn showA() {
-    print a;
-  }
-
-  showA();
-  let a = "block";
-  showA();
+fn count(n) {
+  if (n > 1) count(n - 1);
+  print n;
 }
+
+count(5);

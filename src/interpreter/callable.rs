@@ -5,11 +5,11 @@ use crate::{
     EvalResult,
 };
 
-use super::{interpreter, Interpreter};
+use super::{interpreter, Environment, Interpreter};
 
 pub trait Callable {
     fn arity(&self) -> usize;
-    fn call(&self, interpreter: &mut Interpreter, arguments: &ArgumentList) -> EvalResult<()>;
+    fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> EvalResult<()>;
 }
 
 impl Callable for Function {
@@ -17,28 +17,23 @@ impl Callable for Function {
         self.params.len()
     }
 
-    fn call(&self, interpreter: &mut Interpreter, args: &ArgumentList) -> EvalResult<()> {
+    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>) -> EvalResult<()> {
         let Function {
-            name,
+            name: _,
             params,
             body,
-            scope,
+            closure,
         } = self;
 
         if self.arity() != args.len() {
             return Err(RuntimeError::Error("args number mismatched".into()));
         }
 
-        // println!("{:?}", scope);
-
-        // println!("params {:?}", params);
-        // println!("arguments {:?}", arguments);
-
-        for (i, arg) in args.iter().enumerate() {
-            let value = interpreter.evaluate(arg)?;
-            scope.borrow_mut().define(params[i].clone(), value)
+        let env = Environment::extends(closure);
+        for (i, arg) in args.into_iter().enumerate() {
+            env.borrow_mut().define(params[i].clone(), arg)
         }
-
+        interpreter.set_env(env);
         interpreter.execute(&*body)
     }
 }
