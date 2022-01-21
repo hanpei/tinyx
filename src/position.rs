@@ -22,7 +22,7 @@ impl Loc {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Span {
     pub filename: String,
     pub loc: Loc,
@@ -34,7 +34,7 @@ impl Span {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct WithSpan<T> {
     pub value: T,
     pub filename: String,
@@ -51,5 +51,16 @@ impl<T> WithSpan<T> {
     }
     pub fn span(&self) -> Span {
         Span::new(self.filename.to_string(), self.loc)
+    }
+}
+
+impl std::fmt::Debug for Span {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "")
+    }
+}
+impl<T> std::fmt::Debug for WithSpan<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "")
     }
 }

@@ -85,17 +85,20 @@ impl StmtVisitor for Interpreter {
         self.env
             .borrow_mut()
             .define(name.to_string(), value.clone());
+
         Ok(())
     }
 
     fn visit_function_declare(&mut self, decl: &FunctionDeclaration) -> Self::Item {
         let FunctionDeclaration { id, params, body } = decl;
 
+        let scope = Rc::clone(&self.env);
+        // println!("fn<{:?}>, {:#?}", id, scope);
         let func = Function::new(
             Some(id.name.to_string()),
             params.iter().map(|i| i.name.to_string()).collect(),
             *body.clone(),
-            self.env.clone(),
+            scope,
         );
 
         self.env
@@ -236,16 +239,16 @@ impl ExprVisitor for Interpreter {
 
     fn visit_call(&mut self, call: &CallExpr) -> Self::Item {
         let CallExpr { callee, arguments } = call;
-
         let value = self.evaluate(callee)?;
+
         match value {
             Value::Function(function) => function.call(self, arguments)?,
             _ => return Err(RuntimeError::Error("invalid callee".to_string())),
         }
-        if let Some(r) = &self.result {
-            Ok(r.clone())
-        } else {
-            Ok(Value::Null)
+
+        match &self.result {
+            Some(r) => Ok(r.clone()),
+            _ => Ok(Value::Null),
         }
     }
 

@@ -1,7 +1,10 @@
 use core::fmt;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{ast::Statement, interpreter::Environment};
+use crate::{
+    ast::{Identifier, Statement},
+    interpreter::Environment,
+};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Value {
@@ -66,14 +69,11 @@ fn fmt_obj(obj: &HashMap<String, Value>, f: &mut fmt::Formatter<'_>) -> fmt::Res
 }
 
 fn fmt_fn(fun: &Function, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(
-        f,
-        "[Function <{}>]",
-        match &fun.name {
-            Some(n) => n,
-            None => "anonymous",
-        }
-    )
+    let fn_name = match &fun.name {
+        Some(n) => n.to_string(),
+        None => "anonymous".to_string(),
+    };
+    write!(f, "[Function <{}>]", fn_name)
 }
 
 #[derive(Debug, PartialEq, Clone)]

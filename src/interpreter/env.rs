@@ -29,6 +29,9 @@ impl Environment {
     }
 
     pub fn define(&mut self, name: String, value: Value) {
+        // println!("env: define");
+        // println!("name: {:#?} , value: {:#?}", name, value);
+
         self.store.insert(name, value);
     }
 

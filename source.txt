@@ -1,6 +1,10 @@
-fn sum(x, y) {
-    return x +y
-}
-let v = sum(1,2)
+let a = "global";
+{
+  fn showA() {
+    print a;
+  }
 
-print sum(1,4)
+  showA();
+  let a = "block";
+  showA();
+}

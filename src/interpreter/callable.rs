@@ -1,5 +1,6 @@
 use crate::{
     ast::{ArgumentList, FunctionDeclaration, Identifier, Statement},
+    error::RuntimeError,
     value::{Function, Value},
     EvalResult,
 };
@@ -7,22 +8,28 @@ use crate::{
 use super::{interpreter, Interpreter};
 
 pub trait Callable {
-    fn arity(&self) -> i8;
+    fn arity(&self) -> usize;
     fn call(&self, interpreter: &mut Interpreter, arguments: &ArgumentList) -> EvalResult<()>;
 }
 
 impl Callable for Function {
-    fn arity(&self) -> i8 {
-        self.params.len() as i8
+    fn arity(&self) -> usize {
+        self.params.len()
     }
 
     fn call(&self, interpreter: &mut Interpreter, args: &ArgumentList) -> EvalResult<()> {
         let Function {
-            name: _,
+            name,
             params,
             body,
             scope,
         } = self;
+
+        if self.arity() != args.len() {
+            return Err(RuntimeError::Error("args number mismatched".into()));
+        }
+
+        // println!("{:?}", scope);
 
         // println!("params {:?}", params);
         // println!("arguments {:?}", arguments);
