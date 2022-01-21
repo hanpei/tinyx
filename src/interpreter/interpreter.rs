@@ -33,7 +33,10 @@ impl Interpreter {
                 Some(v) => println!(" > {}", v),
                 None => (),
             },
-            Err(e) => println!(" > {}", e),
+            Err(e) => match e {
+                RuntimeError::ReturnedValue(v) => println!(" > {}", v),
+                _ => eprintln!(" > {}", e),
+            },
         }
         Ok(())
     }
@@ -132,7 +135,10 @@ impl StmtVisitor for Interpreter {
             let value = self.evaluate(expr)?;
             self.result = Some(value);
         }
-        Ok(())
+        match &self.result {
+            Some(v) => Err(RuntimeError::ReturnedValue(v.clone())),
+            None => Err(RuntimeError::ReturnedValue(Value::Null)),
+        }
     }
 
     fn visit_print_stmt(&mut self, expr: &Expr) -> Self::Item {

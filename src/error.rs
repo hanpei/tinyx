@@ -1,6 +1,7 @@
 use crate::{
     position::{Pos, Span},
     token::TokenKind,
+    value::Value,
 };
 
 #[derive(Debug)]
@@ -65,7 +66,8 @@ impl ParserError {
 pub enum RuntimeError {
     SyntaxError(String, Span),
     ReferenceError(String, Span),
-    Error(String), // TODO: add span
+    ReturnedValue(Value), // for return stmt result
+    Error(String),        // TODO: add span
 }
 
 impl std::fmt::Display for RuntimeError {
@@ -82,6 +84,7 @@ impl std::fmt::Display for RuntimeError {
                 variabale, span.filename, span.loc.start.ln, span.loc.start.col
             ),
             RuntimeError::Error(msg) => write!(f, "ReferenceError: {}", msg),
+            RuntimeError::ReturnedValue(value) => write!(f, "{}", value),
         }
     }
 }
