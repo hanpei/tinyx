@@ -33,9 +33,10 @@ impl Interpreter {
                 Some(v) => println!(" > {}", v),
                 None => (),
             },
+            // Err(e) => eprintln!(" > ERROR: {}", e)
             Err(e) => match e {
                 RuntimeError::ReturnedValue(v) => println!(" > {}", v),
-                _ => eprintln!(" > {}", e),
+                _ => eprintln!(" > ERROR: {}", e),
             },
         }
         Ok(())
@@ -59,6 +60,7 @@ impl Interpreter {
     pub fn execute(&mut self, stmt: &Statement) -> EvalResult<()> {
         self.visit_stmt(stmt)
     }
+
     pub fn execute_block(
         &mut self,
         block: &Vec<Statement>,
@@ -92,6 +94,7 @@ impl StmtVisitor for Interpreter {
         for stmt in block {
             self.execute(stmt)?;
         }
+
         self.env = prev_env;
         Ok(())
     }

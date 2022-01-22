@@ -20,7 +20,7 @@ while (a<10) {
 }
 
 
-// bugs: while loop do not break after return value
+// while loop do not break after return value
 fn count(n) {
   while (n < 10) {
     if (n == 3) return n; // <--
@@ -32,7 +32,7 @@ fn count(n) {
 count(1);
 
 
-// bug: closure
+// closure
 fn makeCounter() {
   let i = 0;
   fn count() {

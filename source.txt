@@ -1,6 +1,6 @@
-fn count(n) {
-  if (n > 1) count(n - 1);
-  print n;
+fn fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 2) + fib(n - 1);
 }
 
-count(5);
+fib(5)
