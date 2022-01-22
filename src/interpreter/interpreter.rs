@@ -60,21 +60,6 @@ impl Interpreter {
     pub fn execute(&mut self, stmt: &Statement) -> EvalResult<()> {
         self.visit_stmt(stmt)
     }
-
-    pub fn execute_block(
-        &mut self,
-        block: &Vec<Statement>,
-        env: Rc<RefCell<Environment>>,
-    ) -> EvalResult<()> {
-        let prev_env = Rc::clone(&env);
-        self.env = Environment::extends(&env);
-
-        for stmt in block {
-            self.execute(stmt)?;
-        }
-        self.env = prev_env;
-        Ok(())
-    }
 }
 
 impl StmtVisitor for Interpreter {
@@ -96,6 +81,7 @@ impl StmtVisitor for Interpreter {
         }
 
         self.env = prev_env;
+        self.result = None;
         Ok(())
     }
 
@@ -173,7 +159,7 @@ impl StmtVisitor for Interpreter {
 
     fn visit_print_stmt(&mut self, expr: &Expr) -> Self::Item {
         let value = self.evaluate(expr)?;
-        println!(" > {}", value);
+        println!(" > print: {}", value);
         self.result = None;
         Ok(())
     }
@@ -283,13 +269,14 @@ impl ExprVisitor for Interpreter {
         }
 
         match value {
-            Value::Function(function) => function.call(self, list)?,
+            Value::Function(function) => match function.call(self, list) {
+                Ok(_) => Ok(Value::Null),
+                Err(e) => match e {
+                    RuntimeError::ReturnedValue(v) => Ok(v),
+                    _ => return Err(e),
+                },
+            },
             _ => return Err(RuntimeError::Error("invalid callee".to_string())),
-        }
-
-        match &self.result {
-            Some(r) => Ok(r.clone()),
-            _ => Ok(Value::Null),
         }
     }
 

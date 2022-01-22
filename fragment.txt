@@ -45,3 +45,10 @@ fn makeCounter() {
 let counter = makeCounter();
 counter(); // "1".
 counter(); // "2".
+
+
+// bug: recursion
+fun fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 2) + fib(n - 1);
+}

@@ -5,3 +5,6 @@ mod visitor;
 
 pub use env::Environment;
 pub use interpreter::Interpreter;
+
+#[cfg(test)]
+mod tests;
