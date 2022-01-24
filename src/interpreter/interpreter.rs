@@ -281,13 +281,7 @@ impl ExprVisitor for Interpreter {
         }
 
         match value {
-            Value::Function(function) => match function.call(self, list) {
-                Ok(_) => Ok(Value::Null),
-                Err(e) => match e {
-                    RuntimeError::ReturnedValue(v) => Ok(v),
-                    _ => return Err(e),
-                },
-            },
+            Value::Function(function) => function.call(self, list),
             _ => return Err(RuntimeError::Error("invalid callee".to_string())),
         }
     }
