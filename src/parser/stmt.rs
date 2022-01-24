@@ -1,5 +1,3 @@
-use std::string::ParseError;
-
 use crate::{
     ast::*,
     error::ParserError,

@@ -1,4 +1,4 @@
-use crate::{lexer::Lexer, parser::parser::Parser, EvalResult};
+use crate::{lexer::Lexer, parser::parser::Parser};
 
 use super::*;
 
@@ -115,6 +115,7 @@ fn if_stmt() {
 
     interpret(source);
 }
+
 #[test]
 fn closure_fn() {
     let source = r#"
@@ -134,4 +135,14 @@ fn closure_fn() {
     "#;
 
     interpret(source);
+}
+
+#[test]
+fn test_rust_scope() {
+    let a = "global";
+    {
+        println!("{}", a);
+        let a = "block";
+        println!("{}", a);
+    }
 }

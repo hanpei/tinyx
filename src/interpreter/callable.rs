@@ -1,5 +1,4 @@
 use crate::{
-    ast::Statement,
     error::RuntimeError,
     value::{Function, Value},
     EvalResult,

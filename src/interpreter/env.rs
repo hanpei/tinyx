@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{error::RuntimeError, position::Span, value::Value, EvalResult};
+use crate::value::Value;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct Environment {
@@ -64,9 +64,44 @@ impl Environment {
 mod tests {
     use super::*;
 
-    #[test]
-    fn env_lookup() {}
+    fn get_env() -> Rc<RefCell<Environment>> {
+        let first = Environment::default();
+        first
+            .borrow_mut()
+            .define("name".to_string(), Value::String("abc".to_string()));
+
+        let second = Environment::extends(&first);
+        second
+            .borrow_mut()
+            .define("age".to_string(), Value::Number(1.0));
+
+        second
+    }
 
     #[test]
-    fn env_assign() {}
+    fn env_lookup() {
+        let env = get_env();
+        let name = env.borrow_mut().lookup("name").unwrap();
+        let age = env.borrow_mut().lookup("age").unwrap();
+
+        assert_eq!(name, Value::String("abc".to_string()));
+        assert_eq!(age, Value::Number(1.0));
+    }
+
+    #[test]
+    fn env_assign() {
+        let env = get_env();
+
+        env.borrow_mut()
+            .assign("name", Value::String("xyz".to_string()));
+        env.borrow_mut().assign("age", Value::Number(2.0));
+
+        println!("env: {:#?}", env);
+
+        let name = env.borrow_mut().lookup("name").unwrap();
+        let age = env.borrow_mut().lookup("age").unwrap();
+
+        assert_eq!(name, Value::String("xyz".to_string()));
+        assert_eq!(age, Value::Number(2.0));
+    }
 }

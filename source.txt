@@ -1,13 +1,12 @@
-fn makeCounter() {
-  let i = 0;
-  fn count() {
-    i = i + 1;
-    print i;
-  }
-
-  return count;
+fn foo() {
+	print a
 }
 
-let counter = makeCounter();
-counter(); // "1".
-counter(); // "2".
+fn bar() {
+	let a = 3;
+	foo();
+}
+
+let a = 2;
+
+bar();

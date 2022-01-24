@@ -1,10 +1,7 @@
 use core::fmt;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{
-    ast::{Identifier, Statement},
-    interpreter::Environment,
-};
+use crate::{ast::Statement, interpreter::Environment};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Value {
