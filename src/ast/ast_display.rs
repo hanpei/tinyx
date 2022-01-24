@@ -84,7 +84,20 @@ impl Display for FunctionDeclaration {
             }
         }
         write!(f, " ], ")?;
-        write!(f, "body: {}", self.body)?;
+        write!(f, "body: {{ ")?;
+
+        write!(f, "Block: ")?;
+        write!(f, "[ ")?;
+        for (i, stmt) in self.body.iter().enumerate() {
+            if i == self.body.len() - 1 {
+                write!(f, "{}", stmt)?;
+            } else {
+                write!(f, "{}, ", stmt)?;
+            }
+        }
+        write!(f, " ]")?;
+        write!(f, " }}")?;
+
         write!(f, " }}")
     }
 }

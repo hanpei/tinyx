@@ -53,16 +53,12 @@ pub type ParamList = Vec<Identifier>;
 pub struct FunctionDeclaration {
     pub id: Identifier,
     pub params: Vec<Identifier>,
-    pub body: Box<Statement>,
+    pub body: Vec<Statement>,
 }
 
 impl FunctionDeclaration {
-    pub fn new(id: Identifier, params: Vec<Identifier>, body: Statement) -> Self {
-        Self {
-            id,
-            params,
-            body: Box::new(body),
-        }
+    pub fn new(id: Identifier, params: Vec<Identifier>, body: Vec<Statement>) -> Self {
+        Self { id, params, body }
     }
 }
 

@@ -1,3 +1,5 @@
+use std::string::ParseError;
+
 use crate::{
     ast::*,
     error::ParserError,
@@ -193,8 +195,13 @@ impl<'a> Parser<'a> {
         self.eat(TokenKind::ParenClose)?;
 
         let body = self.parse_block_stmt()?;
-        let stmt = FunctionDeclaration::new(id, params, body);
-        Ok(Statement::FunctionDeclaration(stmt))
+
+        if let Statement::Block(block) = body {
+            let stmt = FunctionDeclaration::new(id, params, block);
+            Ok(Statement::FunctionDeclaration(stmt))
+        } else {
+            unreachable!()
+        }
     }
 
     /**

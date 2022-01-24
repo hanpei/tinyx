@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::value::Value;
+use crate::{error::RuntimeError, position::Span, value::Value, EvalResult};
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct Environment {
@@ -20,42 +20,41 @@ impl Environment {
         Rc::new(RefCell::new(Environment::new()))
     }
 
-    pub fn extends(outer: &Rc<RefCell<Environment>>) -> Rc<RefCell<Environment>> {
+    pub fn extends(env: &Rc<RefCell<Environment>>) -> Rc<RefCell<Environment>> {
         let env = Environment {
             store: HashMap::new(),
-            outer: Some(Rc::clone(outer)),
+            outer: Some(Rc::clone(env)),
         };
         Rc::new(RefCell::new(env))
     }
 
     pub fn define(&mut self, name: String, value: Value) {
-        // println!("env: define");
-        // println!("name: {:#?} , value: {:#?}", name, value);
-
+        // println!("ENV defined:  {:#?}", name);
         self.store.insert(name, value);
     }
 
-    pub fn lookup(&self, name: &str) -> Option<Value> {
+    pub fn lookup(&mut self, name: &str) -> Option<Value> {
+        // println!("ENV lookup:  {:#?}", name);
         match self.store.get(name.into()) {
             Some(value) => Some(value.clone()),
             None => match &self.outer {
-                Some(outer) => outer.borrow().lookup(name),
+                Some(outer) => outer.borrow_mut().lookup(name),
                 None => None,
             },
         }
     }
 
-    pub fn assign(&mut self, name: &str, value: Value) -> Option<Value> {
-        if self.store.contains_key(name.into()) {
-            self.store.insert(name.into(), value.clone());
-            Some(value)
+    pub fn assign(&mut self, name: &str, value: Value) -> bool {
+        if self.store.contains_key(name) {
+            self.store.insert(name.to_string(), value);
+            true
         } else {
             match &self.outer {
                 Some(outer) => {
-                    outer.as_ref().borrow_mut().assign(name, value.clone());
-                    Some(value)
+                    outer.borrow_mut().assign(name, value);
+                    true
                 }
-                None => None,
+                None => false,
             }
         }
     }
@@ -66,35 +65,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn env_lookup() {
-        let first = Environment::default();
-        let second = Environment::extends(&first);
-
-        first
-            .borrow_mut()
-            .define("foo".to_string(), Value::Number(42.0));
-
-        let a = first.borrow().lookup("foo").unwrap();
-        let b = second.borrow().lookup("foo").unwrap();
-
-        assert_eq!(a, Value::Number(42.0));
-        assert_eq!(b, Value::Number(42.0));
-        assert_eq!(a, b);
-    }
+    fn env_lookup() {}
 
     #[test]
-    fn env_assign() {
-        let first = Environment::default();
-        let second = Environment::extends(&first);
-
-        first
-            .borrow_mut()
-            .define("foo".to_string(), Value::Number(42.0));
-        second.borrow_mut().assign("foo", Value::Number(1.0));
-
-        assert_eq!(
-            second.borrow_mut().lookup("foo").unwrap(),
-            first.borrow().lookup("foo").unwrap()
-        );
-    }
+    fn env_assign() {}
 }

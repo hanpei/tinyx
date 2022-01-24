@@ -13,6 +13,7 @@ pub enum ParserError {
     MissingSemicolon(String),
     LexingError(String),
     InvalidAssignment(String),
+    InvalidFunction(String),
 }
 
 impl ParserError {

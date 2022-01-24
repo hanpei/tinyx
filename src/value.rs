@@ -73,14 +73,14 @@ fn fmt_fn(fun: &Function, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         Some(n) => n.to_string(),
         None => "anonymous".to_string(),
     };
-    write!(f, "[Function <{}>]", fn_name)
+    write!(f, "<fn {}>", fn_name)
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Function {
     pub name: Option<String>,
     pub params: Vec<String>,
-    pub body: Box<Statement>,
+    pub body: Vec<Statement>,
     pub closure: Rc<RefCell<Environment>>,
 }
 
@@ -88,13 +88,13 @@ impl Function {
     pub fn new(
         name: Option<String>,
         params: Vec<String>,
-        body: Statement,
+        body: Vec<Statement>,
         closure: Rc<RefCell<Environment>>,
     ) -> Self {
         Function {
             name,
             params,
-            body: Box::new(body),
+            body,
             closure,
         }
     }

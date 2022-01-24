@@ -15,7 +15,7 @@ use super::{
 };
 
 pub struct Interpreter {
-    pub env: Rc<RefCell<Environment>>,
+    env: Rc<RefCell<Environment>>,
     result: Option<Value>,
 }
 
@@ -60,26 +60,6 @@ impl Interpreter {
     pub fn execute(&mut self, stmt: &Statement) -> EvalResult<()> {
         self.visit_stmt(stmt)
     }
-
-    pub fn execute_block(
-        &mut self,
-        block: &Vec<Statement>,
-        env: Rc<RefCell<Environment>>,
-    ) -> EvalResult<()> {
-        let prev_env = Rc::clone(&self.env);
-        self.env = env;
-        for stmt in block {
-            match self.execute(stmt) {
-                Ok(_) => (),
-                Err(e) => {
-                    self.env = prev_env;
-                    return Err(e);
-                }
-            }
-        }
-        self.env = prev_env;
-        Ok(())
-    }
 }
 
 impl StmtVisitor for Interpreter {
@@ -94,7 +74,15 @@ impl StmtVisitor for Interpreter {
     }
 
     fn visit_block(&mut self, block: &Vec<Statement>) -> Self::Item {
-        self.execute_block(block, Environment::extends(&self.env))
+        let prev_env = Rc::clone(&self.env);
+        self.env = Environment::extends(&self.env);
+        for stmt in block {
+            self.execute(stmt)?;
+        }
+
+        self.env = prev_env;
+        self.result = None;
+        Ok(())
     }
 
     fn visit_variable_declare(&mut self, decl: &VariableDeclaration) -> Self::Item {
@@ -104,7 +92,10 @@ impl StmtVisitor for Interpreter {
             Some(expr) => self.evaluate(expr)?,
             None => Value::Null,
         };
-        self.env.borrow_mut().define(name.to_string(), value);
+        self.env
+            .borrow_mut()
+            .define(name.to_string(), value.clone());
+
         Ok(())
     }
 
@@ -116,7 +107,7 @@ impl StmtVisitor for Interpreter {
         let func = Function::new(
             Some(id.name.to_string()),
             params.iter().map(|i| i.name.to_string()).collect(),
-            body.clone(),
+            *body.clone(),
             closure,
         );
 
@@ -136,14 +127,14 @@ impl StmtVisitor for Interpreter {
         let test = self.evaluate(test)?;
         if test.is_truthy() {
             let prev_env = Rc::clone(&self.env);
-            // self.env = Environment::extends(&self.env);
+            self.env = Environment::extends(&self.env);
             self.execute(&consequent)?;
             self.env = prev_env;
         } else {
             match alternate {
                 Some(stmt) => {
                     let prev_env = Rc::clone(&self.env);
-                    // self.env = Environment::extends(&self.env);
+                    self.env = Environment::extends(&self.env);
                     self.execute(stmt)?;
                     self.env = prev_env;
                 }
@@ -202,10 +193,7 @@ impl ExprVisitor for Interpreter {
         );
 
         match (left, right) {
-            (Value::String(l), Value::String(r)) => Ok(match op.value {
-                Operator::Add => Value::String(format!("{}{}", l, r)),
-                _ => unimplemented!(),
-            }),
+            (Value::String(_), Value::String(_)) => todo!(),
 
             (Value::Number(l), Value::Number(r)) => Ok(match op.value {
                 Operator::Add => Value::Number(l + r),
@@ -254,9 +242,9 @@ impl ExprVisitor for Interpreter {
             Operator::Assign => {
                 let Identifier { name, span } = left;
                 let value = self.evaluate(&*right)?;
-                match self.env.borrow_mut().assign(name, value.clone()) {
-                    true => Ok(value),
-                    false => Err(RuntimeError::ReferenceError(name.to_string(), span.clone())),
+                match self.env.borrow_mut().assign(&name, value.clone()) {
+                    Some(v) => Ok(v),
+                    None => return Err(RuntimeError::ReferenceError(name.into(), span.clone())),
                 }
             }
             _ => unimplemented!(),
@@ -265,9 +253,9 @@ impl ExprVisitor for Interpreter {
 
     fn visit_ident(&mut self, ident: &Identifier) -> Self::Item {
         let Identifier { name, span } = ident;
-        match self.env.borrow_mut().lookup(name) {
-            Some(value) => Ok(value.clone()),
-            None => Err(RuntimeError::ReferenceError(name.to_string(), span.clone())),
+        match self.env.as_ref().borrow().lookup(&name) {
+            Some(value) => Ok(value),
+            None => return Err(RuntimeError::ReferenceError(name.to_string(), span.clone())),
         }
     }
 
