@@ -3,7 +3,9 @@ use std::{
     io::{BufReader, Read},
 };
 
-use tinyx::{interpreter::Interpreter, lexer::Lexer, parser::parser::Parser};
+use tinyx::{
+    analizer::resolver::Resolver, interpreter::Interpreter, lexer::Lexer, parser::parser::Parser,
+};
 
 fn main() {
     let file = File::open("source.txt").unwrap();
@@ -24,8 +26,11 @@ fn main() {
     println!("\n-------- AST END -----------\n\n");
 
     println!("\n------ INTERPRETER START ------------\n");
-    let mut evaluator = Interpreter::new();
-    evaluator
+    let mut interpreter = Interpreter::new();
+    let mut r = Resolver::new(&mut interpreter);
+    r.resolve(&ast)
+        .unwrap_or_else(|e| eprintln!("ERROR: {}", e));
+    interpreter
         .interpret(ast)
         .unwrap_or_else(|e| eprintln!("ERROR: {}", e));
     println!("\n------- INTERPRETER END -----------\n\n");

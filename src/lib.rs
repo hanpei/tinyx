@@ -1,5 +1,6 @@
 use error::{ParserError, RuntimeError};
 
+pub mod analizer;
 pub mod ast;
 pub mod error;
 pub mod interpreter;

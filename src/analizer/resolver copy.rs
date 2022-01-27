@@ -18,7 +18,7 @@ pub enum IdentState {
 
 pub struct Resolver<'a> {
     interpreter: &'a mut Interpreter,
-    scopes: Vec<HashMap<String, bool>>,
+    scopes: Vec<HashMap<String, IdentState>>,
 }
 
 impl<'a> Resolver<'a> {
@@ -34,7 +34,8 @@ impl<'a> Resolver<'a> {
     }
 
     fn begin_scope(&mut self) {
-        self.scopes.push(HashMap::new());
+        let map = HashMap::new();
+        self.scopes.push(map);
     }
 
     fn end_scope(&mut self) {
@@ -58,30 +59,31 @@ impl<'a> Resolver<'a> {
 }
 
 impl<'a> Resolver<'a> {
-    fn declare(&mut self, ident: &Identifier) {
+    fn declare(&mut self, name: String) {
         if self.scopes.is_empty() {
             return;
         }
         self.scopes
             .last_mut()
             .unwrap()
-            .insert(ident.name.clone(), false);
+            .insert(name, IdentState::Declared);
     }
 
-    fn define(&mut self, ident: &Identifier) {
+    fn define(&mut self, name: String) {
         if self.scopes.is_empty() {
             return;
         }
         self.scopes
             .last_mut()
             .unwrap()
-            .insert(ident.name.clone(), true);
+            .insert(name, IdentState::Defined);
     }
 
     fn resolve_local(&mut self, ident: &Identifier) {
         for (i, scope) in self.scopes.iter().rev().enumerate() {
             if scope.contains_key(&ident.name) {
                 self.interpreter.resolve(ident, i);
+                return;
             }
         }
     }
@@ -94,8 +96,8 @@ impl<'a> Resolver<'a> {
             body,
         } = decl;
         for param in params.iter() {
-            self.declare(param);
-            self.define(param)
+            self.declare(param.name.clone());
+            self.define(param.name.clone())
         }
         self.resolve_block(body)?;
         self.end_scope();
@@ -123,18 +125,19 @@ impl<'a> StmtVisitor for Resolver<'a> {
 
     fn visit_variable_declare(&mut self, decl: &VariableDeclaration) -> Self::Item {
         let VariableDeclaration { id, init } = decl;
-        self.declare(id);
+        self.declare(id.name.clone());
 
         if let Some(expr) = init {
             self.resolve_expr(expr)?;
         }
-        self.define(id);
+        self.define(id.name.clone());
         Ok(())
     }
 
     fn visit_function_declare(&mut self, decl: &FunctionDeclaration) -> Self::Item {
-        self.declare(&decl.id);
-        self.define(&decl.id);
+        let FunctionDeclaration { id, .. } = decl;
+        self.declare(id.name.to_string());
+        self.define(id.name.to_string());
         self.resolve_function(decl)?;
         Ok(())
     }
@@ -198,7 +201,7 @@ impl<'a> ExprVisitor for Resolver<'a> {
 
     fn visit_ident(&mut self, ident: &Identifier) -> Self::Item {
         if let Some(scope) = self.scopes.last_mut() {
-            if Some(&false) == scope.get(&ident.name) {
+            if scope.get(&ident.name) == Some(&IdentState::Declared) {
                 return Err(ResolveError::Error(
                     "Can't read local variable in its own initializer.".to_string(),
                 ));

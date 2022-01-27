@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Hash, Eq)]
 pub struct Pos {
     pub ln: usize,
     pub col: usize,
@@ -10,7 +10,7 @@ impl Pos {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Hash, Eq)]
 pub struct Loc {
     pub start: Pos,
     pub end: Pos,
@@ -22,7 +22,7 @@ impl Loc {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Hash, Eq)]
 pub struct Span {
     pub filename: String,
     pub loc: Loc,

@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     ast::*,
@@ -15,15 +15,20 @@ use super::{
 };
 
 pub struct Interpreter {
+    pub global: Rc<RefCell<Environment>>,
     pub env: Rc<RefCell<Environment>>,
+    locals: HashMap<Identifier, usize>,
     result: Option<Value>,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
+        let globals = Environment::default();
         Interpreter {
-            env: Environment::default(),
+            env: Rc::clone(&globals),
+            global: Rc::clone(&globals),
             result: None,
+            locals: HashMap::new(),
         }
     }
 
@@ -75,6 +80,30 @@ impl Interpreter {
         }
         self.env = prev_env;
         Ok(())
+    }
+
+    pub fn resolve(&mut self, ident: &Identifier, depth: usize) {
+        self.locals.insert(ident.clone(), depth);
+    }
+
+    fn look_up_variable(&self, ident: &Identifier) -> EvalResult<Value> {
+        if let Some(distance) = self.locals.get(ident) {
+            match self.env.borrow().get_at(*distance, &ident.name) {
+                Some(v) => Ok(v),
+                None => Err(RuntimeError::ReferenceError(
+                    ident.name.to_string(),
+                    ident.span.clone(),
+                )),
+            }
+        } else {
+            match self.global.borrow_mut().get(&ident.name) {
+                Some(v) => Ok(v),
+                None => Err(RuntimeError::ReferenceError(
+                    ident.name.to_string(),
+                    ident.span.clone(),
+                )),
+            }
+        }
     }
 }
 
@@ -242,9 +271,20 @@ impl ExprVisitor for Interpreter {
             Operator::Assign => {
                 let Identifier { name, span } = left;
                 let value = self.evaluate(&*right)?;
-                match self.env.borrow_mut().assign(name, value.clone()) {
-                    true => Ok(value),
-                    false => Err(RuntimeError::ReferenceError(name.to_string(), span.clone())),
+                if let Some(distance) = self.locals.get(left) {
+                    match self
+                        .env
+                        .borrow_mut()
+                        .assign_at(*distance, name, value.clone())
+                    {
+                        true => Ok(value),
+                        false => Err(RuntimeError::ReferenceError(name.to_string(), span.clone())),
+                    }
+                } else {
+                    match self.env.borrow_mut().assign(name, value.clone()) {
+                        true => Ok(value),
+                        false => Err(RuntimeError::ReferenceError(name.to_string(), span.clone())),
+                    }
                 }
             }
             _ => unimplemented!(),
@@ -252,11 +292,7 @@ impl ExprVisitor for Interpreter {
     }
 
     fn visit_ident(&mut self, ident: &Identifier) -> Self::Item {
-        let Identifier { name, span } = ident;
-        match self.env.borrow_mut().lookup(name) {
-            Some(value) => Ok(value.clone()),
-            None => Err(RuntimeError::ReferenceError(name.to_string(), span.clone())),
-        }
+        self.look_up_variable(ident)
     }
 
     fn visit_call(&mut self, call: &CallExpr) -> Self::Item {
