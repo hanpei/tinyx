@@ -42,10 +42,6 @@ impl Interpreter {
         Ok(())
     }
 
-    pub fn set_env(&mut self, env: Rc<RefCell<Environment>>) {
-        self.env = env;
-    }
-
     fn eval_program(&mut self, program: Program) -> EvalResult<()> {
         for stmt in &program.body {
             self.execute(stmt)?;
@@ -135,18 +131,10 @@ impl StmtVisitor for Interpreter {
         } = stmt;
         let test = self.evaluate(test)?;
         if test.is_truthy() {
-            let prev_env = Rc::clone(&self.env);
-            // self.env = Environment::extends(&self.env);
             self.execute(&consequent)?;
-            self.env = prev_env;
         } else {
             match alternate {
-                Some(stmt) => {
-                    let prev_env = Rc::clone(&self.env);
-                    // self.env = Environment::extends(&self.env);
-                    self.execute(stmt)?;
-                    self.env = prev_env;
-                }
+                Some(stmt) => self.execute(stmt)?,
                 None => (),
             }
         }
