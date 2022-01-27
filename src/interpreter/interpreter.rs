@@ -83,6 +83,9 @@ impl Interpreter {
     }
 
     pub fn resolve(&mut self, ident: &Identifier, depth: usize) {
+        // println!("var: {:?}", ident);
+        //这里key一定要用Identifier, 不能用String,否则会被覆盖,
+        //TODO: 用identifier id来取代
         self.locals.insert(ident.clone(), depth);
     }
 

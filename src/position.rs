@@ -22,7 +22,7 @@ impl Loc {
     }
 }
 
-#[derive(Clone, PartialEq, Hash, Eq)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub struct Span {
     pub filename: String,
     pub loc: Loc,
@@ -54,11 +54,11 @@ impl<T> WithSpan<T> {
     }
 }
 
-impl std::fmt::Debug for Span {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "")
-    }
-}
+// impl std::fmt::Debug for Span {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "")
+//     }
+// }
 impl<T: std::fmt::Debug> std::fmt::Debug for WithSpan<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self.value)
