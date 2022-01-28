@@ -219,7 +219,7 @@ impl<'a> Lexer<'a> {
             _ => unimplemented!(),
         }
 
-        let op = Operator::from_str(&buf);
+        let op = Operator::from(&buf);
         Ok(Token::new(TokenKind::Operator(op), buf, start, self.pos()))
     }
 

@@ -322,7 +322,7 @@ impl<'a> Parser<'a> {
      * helper
      */
     fn parse_op(&mut self) -> WithSpan<Operator> {
-        let op = Operator::from_str(&self.current_token.raw);
+        let op = Operator::from(&self.current_token.raw);
         let op_span = WithSpan::new(op, self.lexer.filename.to_string(), self.current_token.loc);
         self.consume();
         op_span

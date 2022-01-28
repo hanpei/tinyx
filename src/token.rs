@@ -147,10 +147,10 @@ impl std::fmt::Display for Operator {
     }
 }
 
-impl Operator {
-    pub fn from_str(op: &str) -> Self {
+impl From<&String> for Operator {
+    fn from(str: &String) -> Self {
         use Operator::*;
-        match op {
+        match str.as_str() {
             "+" => Add,
             "-" => Min,
             "*" => Mul,
@@ -167,7 +167,32 @@ impl Operator {
             "<=" => LessThanEqual,
             ">" => GreaterThan,
             ">=" => GreaterThanEqual,
-            _ => unimplemented!("{}", op),
+            _ => unimplemented!("{}", str),
         }
     }
 }
+
+// impl Operator {
+//     pub fn from_str(op: &str) -> Self {
+//         use Operator::*;
+//         match op {
+//             "+" => Add,
+//             "-" => Min,
+//             "*" => Mul,
+//             "/" => Div,
+//             "=" => Assign,
+
+//             "||" => Or,
+//             "&&" => And,
+
+//             "!" => Not,
+//             "==" => Equal,
+//             "!=" => NotEqual,
+//             "<" => LessThan,
+//             "<=" => LessThanEqual,
+//             ">" => GreaterThan,
+//             ">=" => GreaterThanEqual,
+//             _ => unimplemented!("{}", op),
+//         }
+//     }
+// }
