@@ -2,25 +2,24 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::value::Value;
 
-#[derive(PartialEq, Clone, Debug)]
-pub struct Environment {
-    store: HashMap<String, Value>,
-    outer: Option<Rc<RefCell<Environment>>>,
+pub type Env = Rc<RefCell<Environment>>;
+pub trait EnvMethod {
+    fn create() -> Rc<RefCell<Environment>>;
+    fn extends(env: &Rc<RefCell<Environment>>) -> Rc<RefCell<Environment>>;
+    fn define(&mut self, name: String, value: Value);
+    fn ancestor(&self, depth: usize) -> Self;
+    fn get_at(&self, distance: usize, name: &str) -> Option<Value>;
+    fn assign_at(&mut self, distance: usize, name: &str, value: Value) -> bool;
+    fn get(&self, name: &str) -> Option<Value>;
+    fn assign(&mut self, name: &str, value: Value) -> bool;
 }
 
-impl Environment {
-    fn new() -> Self {
-        Environment {
-            store: HashMap::new(),
-            outer: None,
-        }
-    }
-
-    pub fn default() -> Rc<RefCell<Environment>> {
+impl EnvMethod for Rc<RefCell<Environment>> {
+    fn create() -> Self {
         Rc::new(RefCell::new(Environment::new()))
     }
 
-    pub fn extends(env: &Rc<RefCell<Environment>>) -> Rc<RefCell<Environment>> {
+    fn extends(env: &Rc<RefCell<Environment>>) -> Self {
         let env = Environment {
             store: HashMap::new(),
             outer: Some(Rc::clone(env)),
@@ -28,15 +27,16 @@ impl Environment {
         Rc::new(RefCell::new(env))
     }
 
-    pub fn define(&mut self, name: String, value: Value) {
-        self.store.insert(name, value);
+    fn define(&mut self, name: String, value: Value) {
+        self.borrow_mut().store.insert(name, value);
     }
 
-    fn ancestor(&self, distance: usize) -> Rc<RefCell<Environment>> {
-        let mut environment = Rc::new(RefCell::new(self.clone()));
+    fn ancestor(&self, distance: usize) -> Self {
+        let mut environment = self.clone();
 
         for i in 0..distance {
             let parent = self
+                .borrow()
                 .outer
                 .clone()
                 .expect(&format!("No enclosing environment at {}", i));
@@ -45,7 +45,7 @@ impl Environment {
         environment
     }
 
-    pub fn get_at(&self, distance: usize, name: &str) -> Option<Value> {
+    fn get_at(&self, distance: usize, name: &str) -> Option<Value> {
         let key = name;
         if distance > 0 {
             self.ancestor(distance).borrow().get(key)
@@ -54,11 +54,34 @@ impl Environment {
         }
     }
 
-    pub fn assign_at(&mut self, distance: usize, name: &str, value: Value) -> bool {
+    fn assign_at(&mut self, distance: usize, name: &str, value: Value) -> bool {
         if distance > 0 {
             self.ancestor(distance).borrow_mut().assign(name, value)
         } else {
             self.assign(name, value)
+        }
+    }
+
+    fn get(&self, name: &str) -> Option<Value> {
+        self.borrow().get(name)
+    }
+
+    fn assign(&mut self, name: &str, value: Value) -> bool {
+        self.borrow_mut().assign(name, value)
+    }
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct Environment {
+    store: HashMap<String, Value>,
+    outer: Option<Env>,
+}
+
+impl Environment {
+    fn new() -> Self {
+        Environment {
+            store: HashMap::new(),
+            outer: None,
         }
     }
 
@@ -91,15 +114,11 @@ mod tests {
     use super::*;
 
     fn get_env() -> Rc<RefCell<Environment>> {
-        let first = Environment::default();
-        first
-            .borrow_mut()
-            .define("name".to_string(), Value::String("abc".to_string()));
+        let mut first = Env::create();
+        first.define("name".to_string(), Value::String("abc".to_string()));
 
-        let second = Environment::extends(&first);
-        second
-            .borrow_mut()
-            .define("age".to_string(), Value::Number(1.0));
+        let mut second = Env::extends(&first);
+        second.define("age".to_string(), Value::Number(1.0));
 
         second
     }
@@ -107,8 +126,8 @@ mod tests {
     #[test]
     fn env_lookup() {
         let env = get_env();
-        let name = env.borrow_mut().get("name").unwrap();
-        let age = env.borrow_mut().get("age").unwrap();
+        let name = env.get("name").unwrap();
+        let age = env.get("age").unwrap();
 
         assert_eq!(name, Value::String("abc".to_string()));
         assert_eq!(age, Value::Number(1.0));
@@ -116,16 +135,15 @@ mod tests {
 
     #[test]
     fn env_assign() {
-        let env = get_env();
+        let mut env = get_env();
 
-        env.borrow_mut()
-            .assign("name", Value::String("xyz".to_string()));
-        env.borrow_mut().assign("age", Value::Number(2.0));
+        env.assign("name", Value::String("xyz".to_string()));
+        env.assign("age", Value::Number(2.0));
 
         println!("env: {:#?}", env);
 
-        let name = env.borrow_mut().get("name").unwrap();
-        let age = env.borrow_mut().get("age").unwrap();
+        let name = env.get("name").unwrap();
+        let age = env.get("age").unwrap();
 
         assert_eq!(name, Value::String("xyz".to_string()));
         assert_eq!(age, Value::Number(2.0));

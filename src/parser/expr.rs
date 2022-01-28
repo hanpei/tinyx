@@ -3,10 +3,9 @@ use crate::{
     error::ParserError,
     position::{Span, WithSpan},
     token::{Operator, TokenKind},
-    ParseResult,
 };
 
-use super::{parser::Parser, MAXIMUM_ARGS};
+use super::{parser::Parser, ParseResult, MAXIMUM_ARGS};
 
 impl<'a> Parser<'a> {
     /**

@@ -1,7 +1,7 @@
 use core::fmt;
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::collections::HashMap;
 
-use crate::{ast::Statement, interpreter::Environment};
+use crate::interpreter::function::Function;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Value {
@@ -71,30 +71,6 @@ fn fmt_fn(fun: &Function, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         None => "anonymous".to_string(),
     };
     write!(f, "<fn {}>", fn_name)
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct Function {
-    pub name: Option<String>,
-    pub params: Vec<String>,
-    pub body: Vec<Statement>,
-    pub closure: Rc<RefCell<Environment>>,
-}
-
-impl Function {
-    pub fn new(
-        name: Option<String>,
-        params: Vec<String>,
-        body: Vec<Statement>,
-        closure: Rc<RefCell<Environment>>,
-    ) -> Self {
-        Function {
-            name,
-            params,
-            body,
-            closure,
-        }
-    }
 }
 
 #[cfg(test)]

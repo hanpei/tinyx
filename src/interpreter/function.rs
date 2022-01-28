@@ -1,15 +1,13 @@
-use std::{cell::RefCell, rc::Rc};
-
 use crate::ast::Statement;
 
-use super::Environment;
+use super::env::Env;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Function {
     pub name: Option<String>,
     pub params: Vec<String>,
     pub body: Vec<Statement>,
-    pub closure: Rc<RefCell<Environment>>,
+    pub closure: Env,
 }
 
 impl Function {
@@ -17,7 +15,7 @@ impl Function {
         name: Option<String>,
         params: Vec<String>,
         body: Vec<Statement>,
-        closure: Rc<RefCell<Environment>>,
+        closure: Env,
     ) -> Self {
         Function {
             name,

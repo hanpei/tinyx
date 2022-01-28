@@ -1,6 +1,6 @@
-use crate::{ast::*, error::ParserError, position::Span, token::TokenKind, ParseResult};
+use crate::{ast::*, error::ParserError, position::Span, token::TokenKind};
 
-use super::parser::Parser;
+use super::{parser::Parser, ParseResult};
 
 impl<'a> Parser<'a> {
     /**

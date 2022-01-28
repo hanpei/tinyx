@@ -1,8 +1,8 @@
 use crate::{
     error::ParserError,
+    parser::ParseResult,
     position::Pos,
     token::{Keyword, Operator, Token, TokenKind},
-    ParseResult,
 };
 
 #[derive(Debug)]

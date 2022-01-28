@@ -1,29 +1,25 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{collections::HashMap, rc::Rc};
 
-use crate::{
-    ast::*,
-    error::RuntimeError,
-    token::Operator,
-    value::{Function, Value},
-    EvalResult,
-};
+use crate::{ast::*, error::RuntimeError, token::Operator, value::Value};
 
 use super::{
     callable::Callable,
-    env::Environment,
+    env::{Env, EnvMethod},
+    function::Function,
     visitor::{ExprVisitor, StmtVisitor},
+    EvalResult,
 };
 
 pub struct Interpreter {
-    pub global: Rc<RefCell<Environment>>,
-    pub env: Rc<RefCell<Environment>>,
+    global: Env,
+    env: Env,
     locals: HashMap<String, usize>,
     result: Option<Value>,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
-        let globals = Environment::default();
+        let globals = Env::create();
         Interpreter {
             env: Rc::clone(&globals),
             global: Rc::clone(&globals),
@@ -54,19 +50,15 @@ impl Interpreter {
         Ok(())
     }
 
-    pub fn evaluate(&mut self, expr: &Expr) -> EvalResult<Value> {
+    fn evaluate(&mut self, expr: &Expr) -> EvalResult<Value> {
         self.walk_expr(expr)
     }
 
-    pub fn execute(&mut self, stmt: &Statement) -> EvalResult<()> {
+    fn execute(&mut self, stmt: &Statement) -> EvalResult<()> {
         self.walk_stmt(stmt)
     }
 
-    pub fn execute_block(
-        &mut self,
-        block: &Vec<Statement>,
-        env: Rc<RefCell<Environment>>,
-    ) -> EvalResult<()> {
+    pub(super) fn execute_block(&mut self, block: &Vec<Statement>, env: Env) -> EvalResult<()> {
         let prev_env = Rc::clone(&self.env);
         self.env = env;
         for stmt in block {
@@ -84,28 +76,24 @@ impl Interpreter {
 
     pub fn resolve(&mut self, ident: &Identifier, depth: usize) {
         // 这里key一定要有唯一性, 不能直接用String,否则会被覆盖,
-        // 重写了Display traite, 用identifier.to_string()当做key: "name@ln:col"
+        // 重写了Display trait, 用identifier.to_string()当做key: "name@ln:col"
         self.locals.insert(ident.to_string(), depth);
         println!("var: {:?}", self.locals);
     }
 
     fn look_up_variable(&self, ident: &Identifier) -> EvalResult<Value> {
-        if let Some(distance) = self.locals.get(&ident.to_string()) {
-            match self.env.borrow().get_at(*distance, &ident.name) {
-                Some(v) => Ok(v),
-                None => Err(RuntimeError::ReferenceError(
-                    ident.name.to_string(),
-                    ident.span.clone(),
-                )),
-            }
-        } else {
-            match self.global.borrow_mut().get(&ident.name) {
-                Some(v) => Ok(v),
-                None => Err(RuntimeError::ReferenceError(
-                    ident.name.to_string(),
-                    ident.span.clone(),
-                )),
-            }
+        let value = match self.locals.get(&ident.to_string()) {
+            // lookup in locals
+            Some(distance) => self.env.get_at(*distance, &ident.name),
+            // lookup in global
+            None => self.global.borrow_mut().get(&ident.name),
+        };
+        match value {
+            Some(v) => Ok(v),
+            None => Err(RuntimeError::ReferenceError(
+                ident.name.clone(),
+                ident.span.clone(),
+            )),
         }
     }
 }
@@ -116,13 +104,12 @@ impl StmtVisitor for Interpreter {
     // stmt
     fn visit_expr_stmt(&mut self, expr: &Expr) -> Self::Item {
         let value = self.evaluate(expr)?;
-        // 把ExpressionStatement最后一个expression的结果显示出来
-        self.result = Some(value);
+        self.result = Some(value); // 把ExpressionStatement最后一个expression的结果显示出来
         Ok(())
     }
 
     fn visit_block(&mut self, block: &Vec<Statement>) -> Self::Item {
-        self.execute_block(block, Environment::extends(&self.env))
+        self.execute_block(block, Env::extends(&self.env))
     }
 
     fn visit_variable_declare(&mut self, decl: &VariableDeclaration) -> Self::Item {
@@ -132,7 +119,7 @@ impl StmtVisitor for Interpreter {
             Some(expr) => self.evaluate(expr)?,
             None => Value::Null,
         };
-        self.env.borrow_mut().define(name.to_string(), value);
+        self.env.define(name.clone(), value);
         Ok(())
     }
 
@@ -142,15 +129,13 @@ impl StmtVisitor for Interpreter {
         let closure = Rc::clone(&self.env);
 
         let func = Function::new(
-            Some(id.name.to_string()),
+            Some(id.name.clone()),
             params.iter().map(|i| i.name.to_string()).collect(),
             body.clone(),
             closure,
         );
 
-        self.env
-            .borrow_mut()
-            .define(id.name.to_string(), Value::Function(func));
+        self.env.define(id.name.clone(), Value::Function(func));
 
         Ok(())
     }
@@ -165,9 +150,8 @@ impl StmtVisitor for Interpreter {
         if test.is_truthy() {
             self.execute(&consequent)?;
         } else {
-            match alternate {
-                Some(stmt) => self.execute(stmt)?,
-                None => (),
+            if let Some(stmt) = alternate {
+                self.execute(stmt)?
             }
         }
         Ok(())
@@ -177,8 +161,7 @@ impl StmtVisitor for Interpreter {
         let ReturnStatement { argument } = stmt;
 
         if let Some(expr) = argument {
-            let value = self.evaluate(expr)?;
-            self.result = Some(value);
+            self.result = Some(self.evaluate(expr)?);
         }
         match &self.result {
             Some(v) => Err(RuntimeError::ReturnedValue(v.clone())),
@@ -275,22 +258,18 @@ impl ExprVisitor for Interpreter {
                 let Identifier { name, span } = left;
                 let value = self.evaluate(&*right)?;
                 if let Some(distance) = self.locals.get(&left.to_string()) {
-                    match self
-                        .env
-                        .borrow_mut()
-                        .assign_at(*distance, name, value.clone())
-                    {
+                    match self.env.assign_at(*distance, name, value.clone()) {
                         true => Ok(value),
-                        false => Err(RuntimeError::ReferenceError(name.to_string(), span.clone())),
+                        false => Err(RuntimeError::ReferenceError(name.clone(), span.clone())),
                     }
                 } else {
                     match self.env.borrow_mut().assign(name, value.clone()) {
                         true => Ok(value),
-                        false => Err(RuntimeError::ReferenceError(name.to_string(), span.clone())),
+                        false => Err(RuntimeError::ReferenceError(name.clone(), span.clone())),
                     }
                 }
             }
-            _ => unimplemented!(),
+            _ => unreachable!(),
         }
     }
 
@@ -345,7 +324,7 @@ impl ExprVisitor for Interpreter {
         Ok(Value::Number(lit.value))
     }
     fn visit_string(&mut self, lit: &StringLiteral) -> Self::Item {
-        Ok(Value::String(lit.value.to_string()))
+        Ok(Value::String(lit.value.clone()))
     }
     fn visit_boolean(&mut self, lit: bool) -> Self::Item {
         Ok(Value::Boolean(lit))

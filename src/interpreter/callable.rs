@@ -1,10 +1,10 @@
-use crate::{
-    error::RuntimeError,
-    value::{Function, Value},
-    EvalResult,
-};
+use crate::{error::RuntimeError, value::Value};
 
-use super::{Environment, Interpreter};
+use super::{
+    env::{Env, EnvMethod},
+    function::Function,
+    EvalResult, Interpreter,
+};
 
 pub trait Callable {
     fn arity(&self) -> usize;
@@ -28,9 +28,9 @@ impl Callable for Function {
             return Err(RuntimeError::Error("args number mismatched".into()));
         }
 
-        let env = Environment::extends(closure);
+        let mut env = Env::extends(closure);
         for (i, arg) in args.into_iter().enumerate() {
-            env.borrow_mut().define(params[i].clone(), arg)
+            env.define(params[i].clone(), arg)
         }
 
         match interpreter.execute_block(body, env) {

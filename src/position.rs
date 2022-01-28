@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy, PartialEq, Hash, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Pos {
     pub ln: usize,
     pub col: usize,
@@ -10,7 +10,7 @@ impl Pos {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Hash, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Loc {
     pub start: Pos,
     pub end: Pos,
@@ -22,7 +22,7 @@ impl Loc {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Hash, Eq)]
+#[derive(Clone, PartialEq)]
 pub struct Span {
     pub filename: String,
     pub loc: Loc,
@@ -54,11 +54,15 @@ impl<T> WithSpan<T> {
     }
 }
 
-// impl std::fmt::Debug for Span {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "")
-//     }
-// }
+impl std::fmt::Debug for Span {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "@{}:{}:{}",
+            self.filename, self.loc.start.ln, self.loc.start.col
+        )
+    }
+}
 impl<T: std::fmt::Debug> std::fmt::Debug for WithSpan<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self.value)

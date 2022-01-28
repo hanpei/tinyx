@@ -1,5 +1,3 @@
-use std::hash::Hash;
-
 use crate::{
     position::{Span, WithSpan},
     token::Operator,
@@ -75,7 +73,7 @@ impl UnaryExpr {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Hash, Eq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Identifier {
     pub name: String,
     pub span: Span,

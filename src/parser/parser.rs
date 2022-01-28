@@ -1,8 +1,10 @@
+use crate::ast::*;
 use crate::error::ParserError;
 use crate::position::Pos;
 use crate::token::TokenKind;
-use crate::{ast::*, ParseResult};
 use crate::{lexer::Lexer, token::Token};
+
+use super::ParseResult;
 
 pub struct Parser<'a> {
     pub lexer: Lexer<'a>,

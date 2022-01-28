@@ -37,11 +37,11 @@ if (a==1) {
     y
 }
 
-function add(x,y) {
+fn add(x,y) {
     x+1;
     return x;
 }
-function t() {
+fn t() {
     return x
 }
 
