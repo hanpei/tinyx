@@ -28,10 +28,12 @@ fn main() {
     println!("\n------ INTERPRETER START ------------\n");
     let mut interpreter = Interpreter::new();
     let mut r = Resolver::new(&mut interpreter);
-    r.resolve(&ast)
-        .unwrap_or_else(|e| eprintln!("ERROR: {}", e));
-    interpreter
-        .interpret(ast)
-        .unwrap_or_else(|e| eprintln!("ERROR: {}", e));
+    match r.resolve(&ast) {
+        Ok(_) => interpreter
+            .interpret(ast)
+            .unwrap_or_else(|e| eprintln!("ERROR: {}", e)),
+        Err(e) => eprintln!("ERROR: {}", e),
+    }
+
     println!("\n------- INTERPRETER END -----------\n\n");
 }

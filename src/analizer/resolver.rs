@@ -16,9 +16,16 @@ pub enum IdentState {
     Defined,
 }
 
+#[derive(Clone, PartialEq)]
+pub enum BlockType {
+    None,
+    Function,
+}
+
 pub struct Resolver<'a> {
     interpreter: &'a mut Interpreter,
-    scopes: Vec<HashMap<String, bool>>,
+    scopes: Vec<HashMap<String, IdentState>>,
+    current_block: BlockType,
 }
 
 impl<'a> Resolver<'a> {
@@ -26,6 +33,7 @@ impl<'a> Resolver<'a> {
         Self {
             interpreter,
             scopes: vec![],
+            current_block: BlockType::None,
         }
     }
 
@@ -58,14 +66,24 @@ impl<'a> Resolver<'a> {
 }
 
 impl<'a> Resolver<'a> {
-    fn declare(&mut self, ident: &Identifier) {
+    fn declare(&mut self, ident: &Identifier) -> ResolveResult<()> {
         if self.scopes.is_empty() {
-            return;
+            return Ok(());
         }
+
+        if self.scopes.last_mut().unwrap().contains_key(&ident.name) {
+            return Err(ResolveError::DeclaredError(
+                ident.name.to_string(),
+                ident.span.clone(),
+            ));
+        }
+
         self.scopes
             .last_mut()
             .unwrap()
-            .insert(ident.name.clone(), false);
+            .insert(ident.name.clone(), IdentState::Declared);
+
+        Ok(())
     }
 
     fn define(&mut self, ident: &Identifier) {
@@ -75,7 +93,7 @@ impl<'a> Resolver<'a> {
         self.scopes
             .last_mut()
             .unwrap()
-            .insert(ident.name.clone(), true);
+            .insert(ident.name.clone(), IdentState::Defined);
     }
 
     fn resolve_local(&mut self, ident: &Identifier) {
@@ -86,7 +104,10 @@ impl<'a> Resolver<'a> {
         }
     }
 
-    fn resolve_function(&mut self, decl: &FunctionDeclaration) -> ResolveResult<()> {
+    fn resolve_function(&mut self, decl: &FunctionDeclaration, ty: BlockType) -> ResolveResult<()> {
+        let prev = self.current_block.clone();
+        self.current_block = ty;
+
         self.begin_scope();
         let FunctionDeclaration {
             id: _,
@@ -94,11 +115,13 @@ impl<'a> Resolver<'a> {
             body,
         } = decl;
         for param in params.iter() {
-            self.declare(param);
+            self.declare(param)?;
             self.define(param)
         }
         self.resolve_block(body)?;
         self.end_scope();
+
+        self.current_block = prev;
         Ok(())
     }
 }
@@ -123,7 +146,7 @@ impl<'a> StmtVisitor for Resolver<'a> {
 
     fn visit_variable_declare(&mut self, decl: &VariableDeclaration) -> Self::Item {
         let VariableDeclaration { id, init } = decl;
-        self.declare(id);
+        self.declare(id)?;
 
         if let Some(expr) = init {
             self.resolve_expr(expr)?;
@@ -133,9 +156,9 @@ impl<'a> StmtVisitor for Resolver<'a> {
     }
 
     fn visit_function_declare(&mut self, decl: &FunctionDeclaration) -> Self::Item {
-        self.declare(&decl.id);
+        self.declare(&decl.id)?;
         self.define(&decl.id);
-        self.resolve_function(decl)?;
+        self.resolve_function(decl, BlockType::Function)?;
         Ok(())
     }
 
@@ -154,6 +177,10 @@ impl<'a> StmtVisitor for Resolver<'a> {
     }
 
     fn visit_return_stmt(&mut self, stmt: &ReturnStatement) -> Self::Item {
+        if self.current_block == BlockType::None {
+            return Err(ResolveError::Error("Illegal return statement".to_string()));
+        }
+
         let ReturnStatement { argument } = stmt;
         if let Some(expr) = argument {
             self.resolve_expr(expr)?;
@@ -198,7 +225,7 @@ impl<'a> ExprVisitor for Resolver<'a> {
 
     fn visit_ident(&mut self, ident: &Identifier) -> Self::Item {
         if let Some(scope) = self.scopes.last_mut() {
-            if Some(&false) == scope.get(&ident.name) {
+            if Some(&IdentState::Declared) == scope.get(&ident.name) {
                 return Err(ResolveError::Error(
                     "Can't read local variable in its own initializer.".to_string(),
                 ));

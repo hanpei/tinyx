@@ -89,3 +89,21 @@ impl std::fmt::Display for RuntimeError {
         }
     }
 }
+
+pub enum ResolveError {
+    Error(String),
+    DeclaredError(String, Span),
+}
+
+impl std::fmt::Display for ResolveError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ResolveError::Error(msg) => write!(f, "SyntaxError: {}", msg),
+            ResolveError::DeclaredError(name, span) => write!(
+                f,
+                "SyntaxError:: Identifier '{}' has already been declared, at: {}:{}:{}",
+                name, span.filename, span.loc.start.ln, span.loc.start.col
+            ),
+        }
+    }
+}

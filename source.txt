@@ -1,10 +1,14 @@
-// while loop do not break after return value
-fn count(n) {
-  while (n < 10) {
-    if (n == 3) return n; // <--
-    print n;
-    n = n + 1;
+
+// closure
+fn makeCounter() {
+  let i = 0;
+  fn count() {
+    i = i + 1;
+    print i;
   }
+  return count;
 }
 
-count(1);
+let counter = makeCounter();
+counter(); // "1".
+counter(); // "2".
