@@ -57,7 +57,7 @@ impl<'a> Parser<'a> {
                 self.maybe(TokenKind::Eol);
             }
             _ => {
-                println!("expect_end_with_semi err");
+                // println!("expect_end_with_semi err");
                 self.log();
                 return Err(ParserError::missing_semi(
                     self.lexer.filename,

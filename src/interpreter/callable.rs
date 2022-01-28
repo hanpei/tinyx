@@ -29,7 +29,6 @@ impl Callable for Function {
         }
 
         let env = Environment::extends(closure);
-        // println!("callable env: {:?}", env);
         for (i, arg) in args.into_iter().enumerate() {
             env.borrow_mut().define(params[i].clone(), arg)
         }

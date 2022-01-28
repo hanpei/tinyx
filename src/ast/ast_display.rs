@@ -204,7 +204,11 @@ impl Display for CallExpr {
 impl Display for Identifier {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // write!(f, "{{ ")?;
-        write!(f, "{}", self.name)
+        write!(
+            f,
+            "{}@{}:{}",
+            self.name, self.span.loc.start.ln, self.span.loc.start.col
+        )
         // write!(f, " }}")
     }
 }

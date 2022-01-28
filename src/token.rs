@@ -171,28 +171,3 @@ impl From<&String> for Operator {
         }
     }
 }
-
-// impl Operator {
-//     pub fn from_str(op: &str) -> Self {
-//         use Operator::*;
-//         match op {
-//             "+" => Add,
-//             "-" => Min,
-//             "*" => Mul,
-//             "/" => Div,
-//             "=" => Assign,
-
-//             "||" => Or,
-//             "&&" => And,
-
-//             "!" => Not,
-//             "==" => Equal,
-//             "!=" => NotEqual,
-//             "<" => LessThan,
-//             "<=" => LessThanEqual,
-//             ">" => GreaterThan,
-//             ">=" => GreaterThanEqual,
-//             _ => unimplemented!("{}", op),
-//         }
-//     }
-// }

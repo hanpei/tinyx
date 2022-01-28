@@ -50,11 +50,11 @@ impl<'a> Resolver<'a> {
     }
 
     fn resolve_stmt(&mut self, stmt: &Statement) -> ResolveResult<()> {
-        self.visit_stmt(stmt)
+        self.walk_stmt(stmt)
     }
 
     fn resolve_expr(&mut self, expr: &Expr) -> ResolveResult<()> {
-        self.visit_expr(expr)
+        self.walk_expr(expr)
     }
 
     fn resolve_block(&mut self, block: &Vec<Statement>) -> ResolveResult<()> {

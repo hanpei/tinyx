@@ -17,7 +17,7 @@ use super::{
 pub struct Interpreter {
     pub global: Rc<RefCell<Environment>>,
     pub env: Rc<RefCell<Environment>>,
-    locals: HashMap<Identifier, usize>,
+    locals: HashMap<String, usize>,
     result: Option<Value>,
 }
 
@@ -55,11 +55,11 @@ impl Interpreter {
     }
 
     pub fn evaluate(&mut self, expr: &Expr) -> EvalResult<Value> {
-        self.visit_expr(expr)
+        self.walk_expr(expr)
     }
 
     pub fn execute(&mut self, stmt: &Statement) -> EvalResult<()> {
-        self.visit_stmt(stmt)
+        self.walk_stmt(stmt)
     }
 
     pub fn execute_block(
@@ -83,14 +83,14 @@ impl Interpreter {
     }
 
     pub fn resolve(&mut self, ident: &Identifier, depth: usize) {
-        // println!("var: {:?}", ident);
-        //这里key一定要用Identifier, 不能用String,否则会被覆盖,
-        //TODO: 用identifier id来取代
-        self.locals.insert(ident.clone(), depth);
+        // 这里key一定要有唯一性, 不能直接用String,否则会被覆盖,
+        // 重写了Display traite, 用identifier.to_string()当做key: "name@ln:col"
+        self.locals.insert(ident.to_string(), depth);
+        println!("var: {:?}", self.locals);
     }
 
     fn look_up_variable(&self, ident: &Identifier) -> EvalResult<Value> {
-        if let Some(distance) = self.locals.get(ident) {
+        if let Some(distance) = self.locals.get(&ident.to_string()) {
             match self.env.borrow().get_at(*distance, &ident.name) {
                 Some(v) => Ok(v),
                 None => Err(RuntimeError::ReferenceError(
@@ -274,7 +274,7 @@ impl ExprVisitor for Interpreter {
             Operator::Assign => {
                 let Identifier { name, span } = left;
                 let value = self.evaluate(&*right)?;
-                if let Some(distance) = self.locals.get(left) {
+                if let Some(distance) = self.locals.get(&left.to_string()) {
                     match self
                         .env
                         .borrow_mut()

@@ -3,7 +3,7 @@ use crate::ast::*;
 // stmt ===============================
 pub trait StmtVisitor {
     type Item;
-    fn visit_stmt(&mut self, stmt: &Statement) -> Self::Item {
+    fn walk_stmt(&mut self, stmt: &Statement) -> Self::Item {
         match stmt {
             Statement::ExprStmt(expr) => self.visit_expr_stmt(expr),
             Statement::Block(block) => self.visit_block(block),
@@ -32,7 +32,7 @@ pub trait StmtVisitor {
 pub trait ExprVisitor {
     type Item;
 
-    fn visit_expr(&mut self, expr: &Expr) -> Self::Item {
+    fn walk_expr(&mut self, expr: &Expr) -> Self::Item {
         match expr {
             Expr::NumericLiteral(n) => self.visit_numeric(n),
             Expr::StringLiteral(s) => self.visit_string(s),

@@ -87,12 +87,6 @@ impl Identifier {
     }
 }
 
-impl Into<String> for Identifier {
-    fn into(self) -> String {
-        self.name
-    }
-}
-
 #[derive(Debug, PartialEq, Clone)]
 pub struct AssignExpr {
     pub op: WithSpan<Operator>,

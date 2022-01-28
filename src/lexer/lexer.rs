@@ -149,12 +149,13 @@ impl<'a> Lexer<'a> {
         Ok(Token::new(TokenKind::String, s, start, self.pos()))
     }
 
+    // 字母开头，可以包含数字和下划线
     fn read_identifier(&mut self, first: u8, start: Pos) -> ParseResult<Token> {
         let mut buf = String::new();
         buf.push(first as char);
         while let Some(c) = self.peek() {
             match c {
-                b'a'..=b'z' | b'A'..=b'Z' => buf.push(c as char),
+                b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'_' => buf.push(c as char),
                 _ => break,
             }
             self.advance();

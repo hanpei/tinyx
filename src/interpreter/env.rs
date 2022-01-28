@@ -9,7 +9,7 @@ pub struct Environment {
 }
 
 impl Environment {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Environment {
             store: HashMap::new(),
             outer: None,
@@ -86,48 +86,48 @@ impl Environment {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-//     fn get_env() -> Rc<RefCell<Environment>> {
-//         let first = Environment::default();
-//         first
-//             .borrow_mut()
-//             .define("name".to_string(), Value::String("abc".to_string()));
+    fn get_env() -> Rc<RefCell<Environment>> {
+        let first = Environment::default();
+        first
+            .borrow_mut()
+            .define("name".to_string(), Value::String("abc".to_string()));
 
-//         let second = Environment::extends(&first);
-//         second
-//             .borrow_mut()
-//             .define("age".to_string(), Value::Number(1.0));
+        let second = Environment::extends(&first);
+        second
+            .borrow_mut()
+            .define("age".to_string(), Value::Number(1.0));
 
-//         second
-//     }
+        second
+    }
 
-//     #[test]
-//     fn env_lookup() {
-//         let env = get_env();
-//         let name = env.borrow_mut().lookup("name").unwrap();
-//         let age = env.borrow_mut().lookup("age").unwrap();
+    #[test]
+    fn env_lookup() {
+        let env = get_env();
+        let name = env.borrow_mut().get("name").unwrap();
+        let age = env.borrow_mut().get("age").unwrap();
 
-//         assert_eq!(name, Value::String("abc".to_string()));
-//         assert_eq!(age, Value::Number(1.0));
-//     }
+        assert_eq!(name, Value::String("abc".to_string()));
+        assert_eq!(age, Value::Number(1.0));
+    }
 
-//     #[test]
-//     fn env_assign() {
-//         let env = get_env();
+    #[test]
+    fn env_assign() {
+        let env = get_env();
 
-//         env.borrow_mut()
-//             .assign("name", Value::String("xyz".to_string()));
-//         env.borrow_mut().assign("age", Value::Number(2.0));
+        env.borrow_mut()
+            .assign("name", Value::String("xyz".to_string()));
+        env.borrow_mut().assign("age", Value::Number(2.0));
 
-//         println!("env: {:#?}", env);
+        println!("env: {:#?}", env);
 
-//         let name = env.borrow_mut().lookup("name").unwrap();
-//         let age = env.borrow_mut().lookup("age").unwrap();
+        let name = env.borrow_mut().get("name").unwrap();
+        let age = env.borrow_mut().get("age").unwrap();
 
-//         assert_eq!(name, Value::String("xyz".to_string()));
-//         assert_eq!(age, Value::Number(2.0));
-//     }
-// }
+        assert_eq!(name, Value::String("xyz".to_string()));
+        assert_eq!(age, Value::Number(2.0));
+    }
+}
