@@ -28,6 +28,13 @@ impl ParserError {
         Self::ParseError(format!("invalid number at {}:{}:{}", file, pos.ln, pos.col))
     }
 
+    pub fn parse_unicode_error(file: &str, pos: Pos) -> ParserError {
+        Self::ParseError(format!(
+            "Invalid Unicode escape sequence, at {}:{}:{}",
+            file, pos.ln, pos.col
+        ))
+    }
+
     pub fn maximum_size_error(file: &str, pos: Pos) -> ParserError {
         Self::ParseError(format!(
             "parse error: elements reach the maximum at {}:{}:{}",

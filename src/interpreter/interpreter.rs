@@ -86,7 +86,7 @@ impl Interpreter {
             // lookup in locals
             Some(distance) => self.env.get_at(*distance, &ident.name),
             // lookup in global
-            None => self.global.borrow_mut().get(&ident.name),
+            None => self.global.get(&ident.name),
         };
         match value {
             Some(v) => Ok(v),
@@ -263,7 +263,7 @@ impl ExprVisitor for Interpreter {
                         false => Err(RuntimeError::ReferenceError(name.clone(), span.clone())),
                     }
                 } else {
-                    match self.env.borrow_mut().assign(name, value.clone()) {
+                    match self.env.assign(name, value.clone()) {
                         true => Ok(value),
                         false => Err(RuntimeError::ReferenceError(name.clone(), span.clone())),
                     }

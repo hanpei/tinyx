@@ -1,3 +1,5 @@
+use std::char::{from_u32, from_u32_unchecked};
+
 use crate::{
     error::ParserError,
     parser::ParseResult,
@@ -135,18 +137,74 @@ impl<'a> Lexer<'a> {
     }
 
     fn read_string(&mut self, _c: u8, start: Pos) -> ParseResult<Token> {
-        let mut buf = vec![];
+        let mut buf = String::new();
         while let Some(c) = self.advance() {
             match c {
                 b'"' => break,
                 b'\n' => self.newline(),
-                _ => buf.push(c),
+                b'\\' => {
+                    if self.peek() == Some(b'u') {
+                        let pos = self.pos();
+                        self.advance();
+                        match self.read_unicode() {
+                            Some(c) => buf.push(c),
+                            None => {
+                                return Err(ParserError::parse_unicode_error(self.filename, pos))
+                            }
+                        }
+                    } else {
+                        buf.push('\\');
+                    }
+                }
+                _ => buf.push(c as char),
             }
         }
 
-        // TODO: excaped , unicode..
-        let s = String::from_utf8(buf).expect("invalid utf8");
-        Ok(Token::new(TokenKind::String, s, start, self.pos()))
+        Ok(Token::new(TokenKind::String, buf, start, self.pos()))
+    }
+
+    fn read_unicode(&mut self) -> Option<char> {
+        if self.peek() == Some(b'{') {
+            self.next_pos();
+            let lo = self.cursor;
+            let mut hi = lo;
+            while self.peek() != Some(b'}') {
+                hi = hi + 1;
+                self.next_pos();
+            }
+            let code = &self.source[lo..hi];
+            self.next_pos();
+
+            let code_point = std::str::from_utf8(code)
+                .ok()
+                .and_then(|code_point_str| u32::from_str_radix(code_point_str, 16).ok());
+
+            match code_point {
+                Some(c) => std::char::from_u32(c),
+                None => None,
+            }
+        } else {
+            let mut code = [0u8; 4];
+
+            for byte in code.iter_mut() {
+                match self.peek() {
+                    Some(b) => {
+                        *byte = b;
+                        self.next_pos();
+                    }
+                    None => return None,
+                }
+            }
+
+            let code_point = std::str::from_utf8(&code)
+                .ok()
+                .and_then(|code_point_str| u32::from_str_radix(code_point_str, 16).ok());
+
+            match code_point {
+                Some(c) => std::char::from_u32(c),
+                None => None,
+            }
+        }
     }
 
     // 字母开头，可以包含数字和下划线

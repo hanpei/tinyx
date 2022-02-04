@@ -85,7 +85,7 @@ impl Environment {
         }
     }
 
-    pub fn get(&self, name: &str) -> Option<Value> {
+    fn get(&self, name: &str) -> Option<Value> {
         let key = name;
         match self.store.get(key) {
             Some(value) => Some((*value).clone()),
@@ -96,7 +96,7 @@ impl Environment {
         }
     }
 
-    pub fn assign(&mut self, name: &str, value: Value) -> bool {
+    fn assign(&mut self, name: &str, value: Value) -> bool {
         if self.store.contains_key(name) {
             self.store.insert(name.to_string(), value);
             true
