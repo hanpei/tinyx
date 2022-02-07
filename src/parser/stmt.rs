@@ -35,6 +35,7 @@ impl<'a> Parser<'a> {
      *      | FunctionDeclaration
      *      | PrintStatement
      *      | WhileStatement
+     *      | ClassDeclaration
      *      ;
      *      ...
      */
@@ -50,10 +51,11 @@ impl<'a> Parser<'a> {
             TokenKind::Identifier => self.parse_expression_stmt(),
             TokenKind::Keyword(Keyword::Let) => self.parse_variable_stmt(),
             TokenKind::Keyword(Keyword::If) => self.parse_if_stmt(),
-            TokenKind::Keyword(Keyword::Fn) => self.parse_fn_declaration_stmt(),
+            TokenKind::Keyword(Keyword::Fn) => self.parse_fn_declaration(),
             TokenKind::Keyword(Keyword::Return) => self.parse_return_stmt(),
             TokenKind::Keyword(Keyword::Print) => self.parse_print_stmt(),
             TokenKind::Keyword(Keyword::While) => self.parse_while_stmt(),
+            TokenKind::Keyword(Keyword::Class) => self.parse_class_declaration(),
             _ => {
                 println!("parse_statment error token: ");
                 self.log();
@@ -98,6 +100,7 @@ impl<'a> Parser<'a> {
         }
         self.maybe(TokenKind::Eol);
         self.eat(TokenKind::BraceClose)?;
+        self.maybe(TokenKind::Eol);
 
         Ok(Statement::Block(list))
     }
@@ -171,17 +174,25 @@ impl<'a> Parser<'a> {
     }
 
     /**
-    *  FunctionDeclaration
-    *      : "function" Identifier "(" ( ParameterList )? ")" BlockStatement
-    *      ;
-    *
-    *  ParameterList
-    *      : Identifier ( "," Identifier )*
-    *      ;
-
-    */
-    fn parse_fn_declaration_stmt(&mut self) -> ParseResult<Statement> {
+     *  FunctionDeclaration
+     *      : "function" Identifier "(" ( ParameterList )? ")" BlockStatement
+     *      ;
+     *
+     *  ParameterList
+     *      : Identifier ( "," Identifier )*
+     *      ;
+     */
+    fn parse_fn_declaration(&mut self) -> ParseResult<Statement> {
         self.eat(TokenKind::Keyword(Keyword::Fn))?;
+        self.parse_fn_body()
+    }
+
+    /**
+     *  FunctionBody
+     *      : Identifier "(" ( ParameterList )? ")" BlockStatement
+     *      ;
+     */
+    fn parse_fn_body(&mut self) -> ParseResult<Statement> {
         let id = self.parse_identifier()?;
 
         self.eat(TokenKind::ParenOpen)?;
@@ -199,6 +210,40 @@ impl<'a> Parser<'a> {
         } else {
             unreachable!()
         }
+    }
+
+    /**
+     * ClassDeclaration
+     *      : "class" IDENTIFIER ( "extends" IDENTIFIER )? "{" FunctionBody* "}"
+     *      ;
+     */
+    fn parse_class_declaration(&mut self) -> ParseResult<Statement> {
+        self.eat(TokenKind::Keyword(Keyword::Class))?;
+        let id = self.parse_identifier()?;
+
+        if self.token_is(TokenKind::Keyword(Keyword::Extends)) {
+            self.eat(TokenKind::Keyword(Keyword::Extends))?;
+            self.parse_identifier()?;
+        }
+
+        self.eat(TokenKind::BraceOpen)?;
+        self.maybe(TokenKind::Eol);
+
+        let mut list = Vec::new();
+        while !self.token_is(TokenKind::BraceClose) && !self.token_is(TokenKind::Eof) {
+            let method = self.parse_fn_body()?;
+            if let Statement::FunctionDeclaration(decl) = method {
+                list.push(decl);
+            } else {
+                unreachable!("invalid function declarationQ");
+            }
+        }
+
+        self.maybe(TokenKind::Eol);
+        self.eat(TokenKind::BraceClose)?;
+
+        let class = ClassDeclaration::new(id, list);
+        Ok(Statement::ClassDeclaration(class))
     }
 
     /**

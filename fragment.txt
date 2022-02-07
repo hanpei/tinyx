@@ -59,3 +59,15 @@ fn factorial(n) {
   return n*factorial(n - 1);
 }
 factorial(5); //120
+
+//class
+class Point {
+    add(x, y) {
+        return x + y
+    }
+    log(){
+        print "point"
+    }
+}
+
+let p = Point();

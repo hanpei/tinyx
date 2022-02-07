@@ -6,7 +6,10 @@ impl Display for Program {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for stmt in &self.body {
             // writeln!(f, "PROGRAM")?;
-            writeln!(f, "{},", stmt)?;
+            if let Statement::Empty = stmt {
+            } else {
+                writeln!(f, "{},", stmt)?;
+            }
         }
         Ok(())
     }
@@ -41,6 +44,7 @@ impl Display for Statement {
                 write!(f, " }}")
             }
             Statement::While(s) => write!(f, "{}", s),
+            Statement::ClassDeclaration(class) => write!(f, "{}", class),
         }
     }
 }
@@ -60,13 +64,29 @@ impl Display for IfStatement {
 
 impl Display for VariableDeclaration {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "VarDecl: ")?;
+        write!(f, "Variable: ")?;
         write!(f, "{{ ")?;
         write!(f, "ident: {}, ", self.id)?;
         if let Some(e) = &self.init {
             write!(f, "init: {}", e)?;
         }
         write!(f, " }}")
+    }
+}
+
+impl Display for ClassDeclaration {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Class: ")?;
+        write!(f, "{{ ")?;
+
+        write!(f, "ident: {}, ", self.id)?;
+        write!(f, "body: [ ")?;
+        for func in self.body.iter() {
+            write!(f, "{}", func)?;
+        }
+        write!(f, " ]")?;
+
+        write!(f, "}}")
     }
 }
 
@@ -134,6 +154,7 @@ impl Display for Expr {
             Expr::Call(c) => write!(f, "{}", c),
             Expr::NullLiteral => write!(f, "null"),
             Expr::Logical(l) => write!(f, "{}", l),
+            Expr::Member(m) => write!(f, "{}", m),
         }
     }
 }
@@ -197,6 +218,16 @@ impl Display for CallExpr {
         } else {
             write!(f, "args: []")?;
         }
+        write!(f, " }}")
+    }
+}
+
+impl Display for MemberExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "MemberExpr: ")?;
+        write!(f, "{{ ")?;
+        write!(f, "object: {}, ", self.object)?;
+        write!(f, "property: {}, ", self.property)?;
         write!(f, " }}")
     }
 }

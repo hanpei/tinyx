@@ -31,6 +31,7 @@ statement:
     | ReturnStatement
     | VariableDeclarator
     | FunctionDeclaration
+    | ClassDeclaration
     ;
 
 
@@ -50,14 +51,20 @@ BlockStatement:
     ;
 
 FunctionDeclaration
-    : "fn" Identifier ( "(" ( FormalParameterList )? ")" ) BlockStatement
+    : "fn" FunctionBody
     ;
 
 FormalParameterList
     : Identifier ( "," Identifier )*
     ;
 
+ClassDeclaration
+    : "class" IDENTIFIER ( "extends" IDENTIFIER )? "{" FunctionBody* "}"
+    ;
 
+FunctionBody
+    : Identifier ( "(" ( FormalParameterList )? ")" ) BlockStatement
+    ;
 
 // expression
 

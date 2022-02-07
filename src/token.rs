@@ -33,6 +33,7 @@ pub enum TokenKind {
     Operator(Operator),
     Semi,
     Comma,
+    Dot,
     None,
     BraceOpen,
     BraceClose,
@@ -61,6 +62,7 @@ impl std::fmt::Display for TokenKind {
             TokenKind::Boolean => write!(f, "Boolean"),
             TokenKind::Comma => write!(f, "Comma"),
             TokenKind::Null => write!(f, "null"),
+            TokenKind::Dot => write!(f, "Dot"),
         }
     }
 }
@@ -74,6 +76,8 @@ pub enum Keyword {
     Return,
     While,
     Print,
+    Class,
+    Extends,
 }
 
 impl std::fmt::Display for Keyword {
@@ -86,6 +90,8 @@ impl std::fmt::Display for Keyword {
             Keyword::Return => write!(f, "Return"),
             Keyword::While => write!(f, "While"),
             Keyword::Print => write!(f, "Print"),
+            Keyword::Class => write!(f, "Class"),
+            Keyword::Extends => write!(f, "Extends"),
         }
     }
 }
@@ -101,6 +107,8 @@ impl Keyword {
             "return" => Some(Return),
             "while" => Some(While),
             "print" => Some(Print),
+            "class" => Some(Class),
+            "extends" => Some(Extends),
             _ => None,
         }
     }

@@ -192,21 +192,34 @@ impl<'a> Parser<'a> {
 
     /**
      * CallExpression
-     *      : PrimaryExpression ( "(" Arguments? ")" )*
+     *      : PrimaryExpression ( "(" Arguments? ")" | "." Identifier )*
      *      ;
      */
     fn parse_call_expr(&mut self) -> ParseResult<Expr> {
+        let loc = self.current_token.loc;
         let mut expr = self.parse_primary_expr()?;
 
-        while self.token_is(TokenKind::ParenOpen) {
-            self.eat(TokenKind::ParenOpen)?;
+        while self.token_is(TokenKind::ParenOpen) || self.token_is(TokenKind::Dot) {
+            if self.token_is(TokenKind::ParenOpen) {
+                self.eat(TokenKind::ParenOpen)?;
 
-            let mut arguments: ArgumentList = Vec::new();
-            if !self.token_is(TokenKind::ParenClose) {
-                arguments = self.parse_arguments()?;
+                let mut arguments: ArgumentList = Vec::new();
+                if !self.token_is(TokenKind::ParenClose) {
+                    arguments = self.parse_arguments()?;
+                }
+                self.eat(TokenKind::ParenClose)?;
+                expr = Expr::Call(CallExpr::new(
+                    expr,
+                    arguments,
+                    Span::new(self.lexer.filename.to_string(), loc),
+                ));
             }
-            self.eat(TokenKind::ParenClose)?;
-            expr = Expr::Call(CallExpr::new(expr, arguments));
+
+            if self.token_is(TokenKind::Dot) {
+                self.eat(TokenKind::Dot)?;
+                let ident = self.parse_identifier()?;
+                expr = Expr::Member(MemberExpr::new(expr, ident));
+            }
         }
 
         Ok(expr)

@@ -14,6 +14,7 @@ pub trait StmtVisitor {
             Statement::Return(r) => self.visit_return_stmt(r),
             Statement::PrintStmt(expr) => self.visit_print_stmt(expr),
             Statement::While(w) => self.visit_while_stmt(w),
+            Statement::ClassDeclaration(class) => self.visit_class_declare(class),
         }
     }
 
@@ -22,6 +23,7 @@ pub trait StmtVisitor {
     fn visit_empty(&mut self) -> Self::Item;
     fn visit_variable_declare(&mut self, decl: &VariableDeclaration) -> Self::Item;
     fn visit_function_declare(&mut self, decl: &FunctionDeclaration) -> Self::Item;
+    fn visit_class_declare(&mut self, class: &ClassDeclaration) -> Self::Item;
     fn visit_if_stmt(&mut self, stmt: &IfStatement) -> Self::Item;
     fn visit_return_stmt(&mut self, stmt: &ReturnStatement) -> Self::Item;
     fn visit_print_stmt(&mut self, expr: &Expr) -> Self::Item;
@@ -44,6 +46,7 @@ pub trait ExprVisitor {
             Expr::Call(c) => self.visit_call(c),
             Expr::NullLiteral => self.visit_null(),
             Expr::Logical(l) => self.visit_logical(l),
+            Expr::Member(m) => self.visit_member(m),
         }
     }
 
@@ -53,6 +56,7 @@ pub trait ExprVisitor {
     fn visit_ident(&mut self, ident: &Identifier) -> Self::Item;
     fn visit_call(&mut self, call: &CallExpr) -> Self::Item;
     fn visit_logical(&mut self, expr: &LogicalExpr) -> Self::Item;
+    fn visit_member(&mut self, expr: &MemberExpr) -> Self::Item;
 
     // literal ===============================
     fn visit_numeric(&mut self, lit: &NumericLiteral) -> Self::Item;

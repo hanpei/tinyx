@@ -1,5 +1,3 @@
-use std::char::{from_u32, from_u32_unchecked};
-
 use crate::{
     error::ParserError,
     parser::ParseResult,
@@ -90,6 +88,7 @@ impl<'a> Lexer<'a> {
                     b'}' => Token::new(TokenKind::BraceClose, "}".to_string(), start, self.pos()),
                     b'(' => Token::new(TokenKind::ParenOpen, "(".to_string(), start, self.pos()),
                     b')' => Token::new(TokenKind::ParenClose, ")".to_string(), start, self.pos()),
+                    b'.' => Token::new(TokenKind::Dot, ".".to_string(), start, self.pos()),
                     _ => {
                         return Err(ParserError::invalid_charactor(
                             self.filename,
@@ -313,6 +312,10 @@ impl<'a> Lexer<'a> {
                     self.advance();
                     self.newline();
                 }
+                // 忽略空行之间的空格
+                b' ' | b'\t' => {
+                    self.advance();
+                }
                 _ => break,
             }
         }
@@ -324,7 +327,10 @@ impl<'a> Lexer<'a> {
         loop {
             match self.next() {
                 Ok(token) => match token.kind {
-                    TokenKind::Eol => continue,
+                    TokenKind::Eol => {
+                        // println!("eol");
+                        continue;
+                    }
                     TokenKind::Eof => {
                         break;
                     }

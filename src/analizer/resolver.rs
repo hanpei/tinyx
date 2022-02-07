@@ -20,6 +20,7 @@ pub enum IdentState {
 pub enum BlockType {
     None,
     Function,
+    Method,
 }
 
 pub struct Resolver<'a> {
@@ -198,6 +199,17 @@ impl<'a> StmtVisitor for Resolver<'a> {
         self.resolve_stmt(body)?;
         Ok(())
     }
+
+    fn visit_class_declare(&mut self, class: &ClassDeclaration) -> Self::Item {
+        let ClassDeclaration { id, body } = class;
+        self.declare(id)?;
+        self.define(id);
+
+        for f in body {
+            self.resolve_function(f, BlockType::Method)?;
+        }
+        Ok(())
+    }
 }
 
 impl<'a> ExprVisitor for Resolver<'a> {
@@ -237,7 +249,11 @@ impl<'a> ExprVisitor for Resolver<'a> {
     }
 
     fn visit_call(&mut self, call: &CallExpr) -> Self::Item {
-        let CallExpr { callee, arguments } = call;
+        let CallExpr {
+            callee,
+            arguments,
+            span: _,
+        } = call;
         self.resolve_expr(callee)?;
         for arg in arguments.iter() {
             self.resolve_expr(arg)?;
@@ -249,6 +265,15 @@ impl<'a> ExprVisitor for Resolver<'a> {
         let LogicalExpr { left, op: _, right } = expr;
         self.resolve_expr(left)?;
         self.resolve_expr(right)?;
+        Ok(())
+    }
+
+    fn visit_member(&mut self, expr: &MemberExpr) -> Self::Item {
+        let MemberExpr {
+            object,
+            property: _,
+        } = expr;
+        self.resolve_expr(object)?;
         Ok(())
     }
 

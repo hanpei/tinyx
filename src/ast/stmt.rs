@@ -5,12 +5,13 @@ pub enum Statement {
     ExprStmt(Expr),
     Block(Vec<Statement>),
     Empty,
-    VariableDeclaration(VariableDeclaration),
-    FunctionDeclaration(FunctionDeclaration),
     If(IfStatement),
     Return(ReturnStatement),
     PrintStmt(Expr),
     While(WhileStmt),
+    VariableDeclaration(VariableDeclaration),
+    FunctionDeclaration(FunctionDeclaration),
+    ClassDeclaration(ClassDeclaration),
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -87,5 +88,19 @@ pub struct VariableDeclaration {
 impl VariableDeclaration {
     pub fn new(id: Identifier, init: Option<Expr>) -> Self {
         Self { id, init }
+    }
+}
+
+type ClassBody = Vec<FunctionDeclaration>;
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct ClassDeclaration {
+    pub id: Identifier,
+    pub body: ClassBody,
+}
+
+impl ClassDeclaration {
+    pub fn new(id: Identifier, body: ClassBody) -> Self {
+        Self { id, body }
     }
 }

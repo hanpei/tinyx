@@ -71,7 +71,7 @@ impl EnvMethod for Rc<RefCell<Environment>> {
     }
 }
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct Environment {
     store: HashMap<String, Value>,
     outer: Option<Env>,

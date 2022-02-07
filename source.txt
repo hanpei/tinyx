@@ -1,2 +1,14 @@
-let a="\u{2764}\x123";
-print a
+class Point {
+    add(x,y) {
+        return x + y
+    }
+    log() {
+        print "log somthing";
+    }
+};
+
+let p = Point();
+p.log()
+p.add(1,2)
+p.x = 1
+p.test()

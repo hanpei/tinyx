@@ -4,6 +4,7 @@ use crate::{ast::*, error::RuntimeError, token::Operator, value::Value};
 
 use super::{
     callable::Callable,
+    class::Class,
     env::{Env, EnvMethod},
     function::Function,
     visitor::{ExprVisitor, StmtVisitor},
@@ -75,10 +76,10 @@ impl Interpreter {
     }
 
     pub fn resolve(&mut self, ident: &Identifier, depth: usize) {
-        // 这里key一定要有唯一性, 不能直接用String,否则会被覆盖,
+        // important: 这里key一定要有唯一性, 不能直接用String,否则会被覆盖,
         // 重写了Display trait, 用identifier.to_string()当做key: "name@ln:col"
         self.locals.insert(ident.to_string(), depth);
-        println!("var: {:?}", self.locals);
+        // println!("var: {:?}", self.locals);
     }
 
     fn look_up_variable(&self, ident: &Identifier) -> EvalResult<Value> {
@@ -137,6 +138,27 @@ impl StmtVisitor for Interpreter {
 
         self.env.define(id.name.clone(), Value::Function(func));
 
+        Ok(())
+    }
+
+    fn visit_class_declare(&mut self, class: &ClassDeclaration) -> Self::Item {
+        let ClassDeclaration { id, body } = class;
+
+        let mut methods = HashMap::new();
+        body.iter().for_each(|m| {
+            methods.insert(
+                m.id.name.clone(),
+                Function::new(
+                    Some(m.id.name.clone()),
+                    m.params.iter().map(|i| i.name.to_string()).collect(),
+                    m.body.clone(),
+                    Rc::clone(&self.env),
+                ),
+            );
+        });
+
+        let class = Class::new(id.clone(), methods);
+        self.env.define(id.name.clone(), Value::Class(class));
         Ok(())
     }
 
@@ -278,7 +300,11 @@ impl ExprVisitor for Interpreter {
     }
 
     fn visit_call(&mut self, call: &CallExpr) -> Self::Item {
-        let CallExpr { callee, arguments } = call;
+        let CallExpr {
+            callee,
+            arguments,
+            span,
+        } = call;
         let value = self.evaluate(callee)?;
 
         let mut list = Vec::new();
@@ -288,7 +314,13 @@ impl ExprVisitor for Interpreter {
 
         match value {
             Value::Function(function) => function.call(self, list),
-            _ => return Err(RuntimeError::Error("invalid callee".to_string())),
+            Value::Class(class) => class.call(self, list),
+            _ => {
+                return Err(RuntimeError::SyntaxError(
+                    "invalid callee".to_string(),
+                    span.clone(),
+                ))
+            }
         }
     }
 
@@ -317,6 +349,21 @@ impl ExprVisitor for Interpreter {
                 }
             }
             _ => Err(op_err),
+        }
+    }
+
+    fn visit_member(&mut self, expr: &MemberExpr) -> Self::Item {
+        let MemberExpr { object, property } = expr;
+        let left = self.evaluate(object)?;
+        match left {
+            Value::Instance(instance) => match instance.get(&property.name) {
+                Some(v) => Ok(v),
+                None => Err(RuntimeError::SyntaxError(
+                    format!("undefined property [ {} ]", property.name.clone()),
+                    property.span.clone(),
+                )),
+            },
+            _ => unimplemented!(),
         }
     }
 

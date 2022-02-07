@@ -15,6 +15,7 @@ pub enum Expr {
     Identifier(Identifier),
     Assign(AssignExpr),
     Call(CallExpr),
+    Member(MemberExpr),
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -107,13 +108,15 @@ pub type ArgumentList = Vec<Expr>;
 pub struct CallExpr {
     pub callee: Box<Expr>,
     pub arguments: ArgumentList,
+    pub span: Span,
 }
 
 impl CallExpr {
-    pub fn new(callee: Expr, arguments: ArgumentList) -> Self {
+    pub fn new(callee: Expr, arguments: ArgumentList, span: Span) -> Self {
         Self {
             callee: Box::new(callee),
             arguments,
+            span,
         }
     }
 }
@@ -131,6 +134,21 @@ impl LogicalExpr {
             left: Box::new(left),
             op,
             right: Box::new(right),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct MemberExpr {
+    pub object: Box<Expr>,
+    pub property: Identifier,
+}
+
+impl MemberExpr {
+    pub fn new(object: Expr, property: Identifier) -> Self {
+        Self {
+            object: Box::new(object),
+            property,
         }
     }
 }
