@@ -73,7 +73,7 @@ Expression:
     ;
 
 AssignmentExpression:
-    : Identifier "=" AssignmentExpression
+    : ( CallExpression "." )? IDENTIFIER "=" AssignmentExpression
     | LogicORExpression
     ;
 
@@ -107,7 +107,7 @@ UnaryExpression
     ;
 
 CallExpression
-    : PrimaryExpression ( "(" arguments? ")" )*
+    : PrimaryExpression ( "(" Arguments? ")" | "." IDENTIFIER )* ;
     ;
 
 Arguments:
@@ -117,7 +117,7 @@ Arguments:
 PrimaryExpression
     : Literal
     | Identifier
-    | Expression
+    | ParenthesizedExpression
     ;
 
 

@@ -15,7 +15,8 @@ pub enum Expr {
     Identifier(Identifier),
     Assign(AssignExpr),
     Call(CallExpr),
-    Member(MemberExpr),
+    Get(GetExpr),
+    Set(SetExpr),
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -139,16 +140,33 @@ impl LogicalExpr {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct MemberExpr {
+pub struct GetExpr {
     pub object: Box<Expr>,
     pub property: Identifier,
 }
 
-impl MemberExpr {
+impl GetExpr {
     pub fn new(object: Expr, property: Identifier) -> Self {
         Self {
             object: Box::new(object),
             property,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct SetExpr {
+    pub object: Box<Expr>,
+    pub property: Identifier,
+    pub value: Box<Expr>,
+}
+
+impl SetExpr {
+    pub fn new(object: Expr, property: Identifier, value: Expr) -> Self {
+        Self {
+            object: Box::new(object),
+            property,
+            value: Box::new(value),
         }
     }
 }

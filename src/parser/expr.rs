@@ -11,15 +11,15 @@ impl<'a> Parser<'a> {
     /**
      *  Expression
      *      : AssignmentExpression
+     *      ;
      */
     pub(super) fn parse_expression(&mut self) -> ParseResult<Expr> {
         self.parse_assign_expr()
-        // self.parse_additive_expr()
     }
 
     /**
      * AssignmentExpression:
-     *      : IDENTIFIER "=" AssignmentExpression
+     *      : ( CallExpression "." )? IDENTIFIER "=" AssignmentExpression
      *      | LogicORExpression
      *      ;
      */
@@ -36,6 +36,11 @@ impl<'a> Parser<'a> {
             Expr::Identifier(ident) => Ok(Expr::Assign(AssignExpr::new(
                 span_op,
                 ident,
+                self.parse_assign_expr()?,
+            ))),
+            Expr::Get(member) => Ok(Expr::Set(SetExpr::new(
+                *member.object,
+                member.property,
                 self.parse_assign_expr()?,
             ))),
             _ => {
@@ -96,14 +101,6 @@ impl<'a> Parser<'a> {
             left = Expr::Binary(BinaryExpr::new(left, span_op, right))
         }
         Ok(left)
-    }
-
-    /**
-     * LeftHandSideExpression
-     *      | todo..
-     */
-    pub(super) fn _parse_left_hand_side_expr(&mut self) -> ParseResult<Expr> {
-        todo!()
     }
 
     /**
@@ -191,23 +188,18 @@ impl<'a> Parser<'a> {
     }
 
     /**
-     * CallExpression
-     *      : PrimaryExpression ( "(" Arguments? ")" | "." Identifier )*
-     *      ;
-     */
+    * CallExpression
+    *      : PrimaryExpression ( "(" Arguments? ")" | "." IDENTIFIER )* ;
+    *      ;
+
+    */
     fn parse_call_expr(&mut self) -> ParseResult<Expr> {
         let loc = self.current_token.loc;
         let mut expr = self.parse_primary_expr()?;
 
         while self.token_is(TokenKind::ParenOpen) || self.token_is(TokenKind::Dot) {
             if self.token_is(TokenKind::ParenOpen) {
-                self.eat(TokenKind::ParenOpen)?;
-
-                let mut arguments: ArgumentList = Vec::new();
-                if !self.token_is(TokenKind::ParenClose) {
-                    arguments = self.parse_arguments()?;
-                }
-                self.eat(TokenKind::ParenClose)?;
+                let arguments = self.parse_arguments()?;
                 expr = Expr::Call(CallExpr::new(
                     expr,
                     arguments,
@@ -218,7 +210,7 @@ impl<'a> Parser<'a> {
             if self.token_is(TokenKind::Dot) {
                 self.eat(TokenKind::Dot)?;
                 let ident = self.parse_identifier()?;
-                expr = Expr::Member(MemberExpr::new(expr, ident));
+                expr = Expr::Get(GetExpr::new(expr, ident));
             }
         }
 
@@ -227,25 +219,30 @@ impl<'a> Parser<'a> {
 
     /**
      * Arguments
-     *      : Expression ("," Expression)*
+     *      : "(" (Expression ("," Expression)*)? ")"
      *      ;
      */
     fn parse_arguments(&mut self) -> ParseResult<ArgumentList> {
+        self.eat(TokenKind::ParenOpen)?;
         let mut list = Vec::new();
-        let expr = self.parse_expression()?;
-        list.push(expr);
-        while self.token_is(TokenKind::Comma) {
-            self.consume();
-            // arguments limit
-            if list.len() >= MAXIMUM_ARGS {
-                return Err(ParserError::maximum_size_error(
-                    self.lexer.filename,
-                    self.current_token.loc.start,
-                ));
-            }
+        if !self.token_is(TokenKind::ParenClose) {
             let expr = self.parse_expression()?;
             list.push(expr);
+
+            while self.token_is(TokenKind::Comma) {
+                self.consume();
+                // arguments limit
+                if list.len() >= MAXIMUM_ARGS {
+                    return Err(ParserError::maximum_size_error(
+                        self.lexer.filename,
+                        self.current_token.loc.start,
+                    ));
+                }
+                let expr = self.parse_expression()?;
+                list.push(expr);
+            }
         }
+        self.eat(TokenKind::ParenClose)?;
         Ok(list)
     }
 

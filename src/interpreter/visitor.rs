@@ -46,7 +46,8 @@ pub trait ExprVisitor {
             Expr::Call(c) => self.visit_call(c),
             Expr::NullLiteral => self.visit_null(),
             Expr::Logical(l) => self.visit_logical(l),
-            Expr::Member(m) => self.visit_member(m),
+            Expr::Get(m) => self.visit_get(m),
+            Expr::Set(s) => self.visit_set(s),
         }
     }
 
@@ -56,7 +57,8 @@ pub trait ExprVisitor {
     fn visit_ident(&mut self, ident: &Identifier) -> Self::Item;
     fn visit_call(&mut self, call: &CallExpr) -> Self::Item;
     fn visit_logical(&mut self, expr: &LogicalExpr) -> Self::Item;
-    fn visit_member(&mut self, expr: &MemberExpr) -> Self::Item;
+    fn visit_get(&mut self, expr: &GetExpr) -> Self::Item;
+    fn visit_set(&mut self, expr: &SetExpr) -> Self::Item;
 
     // literal ===============================
     fn visit_numeric(&mut self, lit: &NumericLiteral) -> Self::Item;

@@ -268,12 +268,23 @@ impl<'a> ExprVisitor for Resolver<'a> {
         Ok(())
     }
 
-    fn visit_member(&mut self, expr: &MemberExpr) -> Self::Item {
-        let MemberExpr {
+    fn visit_get(&mut self, expr: &GetExpr) -> Self::Item {
+        let GetExpr {
             object,
             property: _,
         } = expr;
         self.resolve_expr(object)?;
+        Ok(())
+    }
+
+    fn visit_set(&mut self, expr: &SetExpr) -> Self::Item {
+        let SetExpr {
+            object,
+            property,
+            value,
+        } = expr;
+        self.resolve_expr(object)?;
+        self.resolve_expr(value)?;
         Ok(())
     }
 

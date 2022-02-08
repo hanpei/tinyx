@@ -1,14 +1,13 @@
-class Point {
-    add(x,y) {
-        return x + y
-    }
-    log() {
-        print "log somthing";
-    }
-};
+class Person { }
 
-let p = Point();
-p.log()
-p.add(1,2)
-p.x = 1
-p.test()
+let jane = Person();
+let tom = Person();
+
+jane.name = "Jane";
+jane.age=1;
+jane.age = 12;
+tom.name ="tom"
+
+print jane.name;
+print jane.age;
+print tom.name;

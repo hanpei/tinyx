@@ -97,12 +97,11 @@ fn fmt_fn(fun: &Function, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 }
 
 fn fmt_class(class: &Class, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "<class {}>", class.id.name)
+    write!(f, "<class {}>", class.id)
 }
 
 fn fmt_instance(instance: &Instance, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    let name = instance.class_name();
-    write!(f, "<instance of {}>", name)
+    write!(f, "<instance of {}>", instance.class.id)
 }
 
 #[cfg(test)]

@@ -154,7 +154,8 @@ impl Display for Expr {
             Expr::Call(c) => write!(f, "{}", c),
             Expr::NullLiteral => write!(f, "null"),
             Expr::Logical(l) => write!(f, "{}", l),
-            Expr::Member(m) => write!(f, "{}", m),
+            Expr::Get(m) => write!(f, "{}", m),
+            Expr::Set(s) => write!(f, "{}", s),
         }
     }
 }
@@ -222,12 +223,23 @@ impl Display for CallExpr {
     }
 }
 
-impl Display for MemberExpr {
+impl Display for GetExpr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "MemberExpr: ")?;
+        write!(f, "GetExpr: ")?;
         write!(f, "{{ ")?;
         write!(f, "object: {}, ", self.object)?;
         write!(f, "property: {}, ", self.property)?;
+        write!(f, " }}")
+    }
+}
+
+impl Display for SetExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "SetExpr: ")?;
+        write!(f, "{{ ")?;
+        write!(f, "object: {}, ", self.object)?;
+        write!(f, "property: {}, ", self.property)?;
+        write!(f, "value: {}, ", self.value)?;
         write!(f, " }}")
     }
 }

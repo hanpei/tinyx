@@ -157,7 +157,7 @@ impl StmtVisitor for Interpreter {
             );
         });
 
-        let class = Class::new(id.clone(), methods);
+        let class = Class::new(id.name.clone(), methods);
         self.env.define(id.name.clone(), Value::Class(class));
         Ok(())
     }
@@ -352,8 +352,8 @@ impl ExprVisitor for Interpreter {
         }
     }
 
-    fn visit_member(&mut self, expr: &MemberExpr) -> Self::Item {
-        let MemberExpr { object, property } = expr;
+    fn visit_get(&mut self, expr: &GetExpr) -> Self::Item {
+        let GetExpr { object, property } = expr;
         let left = self.evaluate(object)?;
         match left {
             Value::Instance(instance) => match instance.get(&property.name) {
@@ -365,6 +365,21 @@ impl ExprVisitor for Interpreter {
             },
             _ => unimplemented!(),
         }
+    }
+
+    fn visit_set(&mut self, expr: &SetExpr) -> Self::Item {
+        let SetExpr {
+            object,
+            property,
+            value,
+        } = expr;
+        let left = self.evaluate(object)?;
+        let right = self.evaluate(value)?;
+        match left {
+            Value::Instance(mut instance) => instance.set(&property.name, right.clone()),
+            _ => unimplemented!(),
+        }
+        Ok(right)
     }
 
     fn visit_numeric(&mut self, lit: &NumericLiteral) -> Self::Item {
