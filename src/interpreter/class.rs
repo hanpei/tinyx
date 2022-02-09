@@ -1,8 +1,10 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::collections::HashMap;
 
 use crate::value::Value;
 
-use super::{callable::Callable, function::Function, EvalResult, Interpreter};
+use super::{callable::Callable, function::Function, instance::Instance, EvalResult, Interpreter};
+
+const CONSTRUCTOR_INITIALIZER: &str = "init";
 
 #[derive(Debug, Clone)]
 pub struct Class {
@@ -20,43 +22,17 @@ impl Class {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Instance {
-    pub class: Rc<Class>,
-    pub fields: Rc<RefCell<HashMap<String, Value>>>,
-}
-
-impl Instance {
-    pub fn new(class: &Class) -> Self {
-        Self {
-            class: Rc::new(class.clone()),
-            fields: Rc::new(RefCell::new(HashMap::new())),
-        }
-    }
-
-    pub fn get(&self, prop: &str) -> Option<Value> {
-        if let Some(v) = self.fields.borrow().get(prop) {
-            return Some(v.clone());
-        };
-        if let Some(method) = self.class.get_method(prop) {
-            let m = method.clone().bind(self);
-            return Some(Value::Function(m));
-        }
-        None
-    }
-
-    pub fn set(&mut self, prop: &str, value: Value) {
-        (*self.fields).borrow_mut().insert(prop.to_string(), value);
-    }
-}
-
 impl Callable for Class {
     fn arity(&self) -> usize {
         unimplemented!()
     }
 
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Value>) -> EvalResult<Value> {
+    fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> EvalResult<Value> {
         let instance = Instance::new(self);
+
+        if let Some(init) = self.get_method(CONSTRUCTOR_INITIALIZER) {
+            init.clone().bind(&instance).call(interpreter, arguments)?;
+        }
 
         Ok(Value::Instance(instance))
     }

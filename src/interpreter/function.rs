@@ -2,8 +2,8 @@ use crate::{ast::Statement, error::RuntimeError, value::Value};
 
 use super::{
     callable::Callable,
-    class::Instance,
     env::{Env, EnvMethod},
+    instance::Instance,
     EvalResult, Interpreter,
 };
 

@@ -17,16 +17,23 @@ pub enum IdentState {
 }
 
 #[derive(Clone, PartialEq)]
-pub enum BlockType {
+pub enum FnType {
     None,
     Function,
     Method,
 }
 
+#[derive(Clone, PartialEq)]
+pub enum ClassType {
+    None,
+    Class,
+}
+
 pub struct Resolver<'a> {
     interpreter: &'a mut Interpreter,
     scopes: Vec<HashMap<String, IdentState>>,
-    current_block: BlockType,
+    fn_type: FnType,
+    class_type: ClassType,
 }
 
 impl<'a> Resolver<'a> {
@@ -34,7 +41,8 @@ impl<'a> Resolver<'a> {
         Self {
             interpreter,
             scopes: vec![],
-            current_block: BlockType::None,
+            fn_type: FnType::None,
+            class_type: ClassType::None,
         }
     }
 
@@ -105,9 +113,9 @@ impl<'a> Resolver<'a> {
         }
     }
 
-    fn resolve_function(&mut self, decl: &FunctionDeclaration, ty: BlockType) -> ResolveResult<()> {
-        let prev = self.current_block.clone();
-        self.current_block = ty;
+    fn resolve_function(&mut self, decl: &FunctionDeclaration, ty: FnType) -> ResolveResult<()> {
+        let prev = self.fn_type.clone();
+        self.fn_type = ty;
 
         self.begin_scope();
         let FunctionDeclaration {
@@ -122,7 +130,7 @@ impl<'a> Resolver<'a> {
         self.resolve_block(body)?;
         self.end_scope();
 
-        self.current_block = prev;
+        self.fn_type = prev;
         Ok(())
     }
 }
@@ -159,7 +167,7 @@ impl<'a> StmtVisitor for Resolver<'a> {
     fn visit_function_declare(&mut self, decl: &FunctionDeclaration) -> Self::Item {
         self.declare(&decl.id)?;
         self.define(&decl.id);
-        self.resolve_function(decl, BlockType::Function)?;
+        self.resolve_function(decl, FnType::Function)?;
         Ok(())
     }
 
@@ -178,7 +186,7 @@ impl<'a> StmtVisitor for Resolver<'a> {
     }
 
     fn visit_return_stmt(&mut self, stmt: &ReturnStatement) -> Self::Item {
-        if self.current_block == BlockType::None {
+        if self.fn_type == FnType::None {
             return Err(ResolveError::Error("Illegal return statement".to_string()));
         }
 
@@ -201,6 +209,9 @@ impl<'a> StmtVisitor for Resolver<'a> {
     }
 
     fn visit_class_declare(&mut self, class: &ClassDeclaration) -> Self::Item {
+        let prev = self.class_type.clone();
+        self.class_type = ClassType::Class;
+
         let ClassDeclaration { id, body } = class;
         self.declare(id)?;
         self.define(id);
@@ -214,9 +225,11 @@ impl<'a> StmtVisitor for Resolver<'a> {
             .insert("this".to_string(), IdentState::Declared);
 
         for f in body {
-            self.resolve_function(f, BlockType::Method)?;
+            self.resolve_function(f, FnType::Method)?;
         }
         self.end_scope();
+
+        self.class_type = prev;
         Ok(())
     }
 }
@@ -298,6 +311,11 @@ impl<'a> ExprVisitor for Resolver<'a> {
     }
 
     fn visit_this(&mut self, this: &ThisExpr) -> Self::Item {
+        if self.class_type == ClassType::None {
+            return Err(ResolveError::Error(
+                "Can't use 'this' outside of a class.".to_string(),
+            ));
+        }
         self.resolve_local(&this.into());
         Ok(())
     }

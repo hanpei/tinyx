@@ -1,10 +1,7 @@
 use core::fmt;
 use std::collections::HashMap;
 
-use crate::interpreter::{
-    class::{Class, Instance},
-    function::Function,
-};
+use crate::interpreter::{class::Class, function::Function, instance::Instance};
 
 #[derive(Debug, Clone)]
 pub enum Value {

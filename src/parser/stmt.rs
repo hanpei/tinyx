@@ -56,7 +56,7 @@ impl<'a> Parser<'a> {
             TokenKind::Keyword(Keyword::Print) => self.parse_print_stmt(),
             TokenKind::Keyword(Keyword::While) => self.parse_while_stmt(),
             TokenKind::Keyword(Keyword::Class) => self.parse_class_declaration(),
-            // TokenKind::Keyword(Keyword::This) => self.parse_this_expr(),
+            TokenKind::Keyword(Keyword::This) => self.parse_expression_stmt(),
             _ => {
                 println!("parse_statment error token: ");
                 self.log();

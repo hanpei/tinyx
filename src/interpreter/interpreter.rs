@@ -358,14 +358,17 @@ impl ExprVisitor for Interpreter {
     fn visit_get(&mut self, expr: &GetExpr) -> Self::Item {
         let GetExpr { object, property } = expr;
         let left = self.evaluate(object)?;
+
         match left {
-            Value::Instance(instance) => match instance.get(&property.name) {
-                Some(v) => Ok(v),
-                None => Err(RuntimeError::SyntaxError(
-                    format!("undefined property [ {} ]", property.name.clone()),
-                    property.span.clone(),
-                )),
-            },
+            Value::Instance(instance) => {
+                return match instance.get(&property.name) {
+                    Some(v) => Ok(v),
+                    None => Err(RuntimeError::SyntaxError(
+                        format!("undefined property [ {} ]", property.name.clone()),
+                        property.span.clone(),
+                    )),
+                };
+            }
             _ => unimplemented!(),
         }
     }
@@ -386,7 +389,6 @@ impl ExprVisitor for Interpreter {
     }
 
     fn visit_this(&mut self, this: &ThisExpr) -> Self::Item {
-        println!("12313");
         self.look_up_variable(&this.into())
     }
 

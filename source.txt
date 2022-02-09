@@ -1,11 +1,13 @@
-class Person { 
-    constructor(name) {
-        this.name = name
-    }
-    say() {
-        print this.name;
-    }
+class Circle {
+  init(radius) {
+    this.radius = radius;
+  }
+
+  area() {
+    return 3.141592653 * this.radius * this.radius;
+  }
 }
 
-let p = Person("abc");
-p.say()
+let circle = Circle(4);
+circle.init(5)
+print circle.area(); // Prints roughly "50.2655".
