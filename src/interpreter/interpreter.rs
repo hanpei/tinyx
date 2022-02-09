@@ -18,6 +18,12 @@ pub struct Interpreter {
     result: Option<Value>,
 }
 
+impl Default for Interpreter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Interpreter {
     pub fn new() -> Self {
         let globals = Env::create();
@@ -59,7 +65,7 @@ impl Interpreter {
         self.walk_stmt(stmt)
     }
 
-    pub(super) fn execute_block(&mut self, block: &Vec<Statement>, env: Env) -> EvalResult<()> {
+    pub(super) fn execute_block(&mut self, block: &[Statement], env: Env) -> EvalResult<()> {
         let prev_env = Rc::clone(&self.env);
         self.env = env;
         for stmt in block {
@@ -109,7 +115,7 @@ impl StmtVisitor for Interpreter {
         Ok(())
     }
 
-    fn visit_block(&mut self, block: &Vec<Statement>) -> Self::Item {
+    fn visit_block(&mut self, block: &[Statement]) -> Self::Item {
         self.execute_block(block, Env::extends(&self.env))
     }
 
@@ -170,12 +176,11 @@ impl StmtVisitor for Interpreter {
         } = stmt;
         let test = self.evaluate(test)?;
         if test.is_truthy() {
-            self.execute(&consequent)?;
-        } else {
-            if let Some(stmt) = alternate {
-                self.execute(stmt)?
-            }
+            self.execute(consequent)?;
+        } else if let Some(stmt) = alternate {
+            self.execute(stmt)?
         }
+
         Ok(())
     }
 
@@ -247,7 +252,7 @@ impl ExprVisitor for Interpreter {
 
                 _ => return Err(op_err),
             }),
-            _ => return Err(op_err),
+            _ => Err(op_err),
         }
     }
 
@@ -262,7 +267,7 @@ impl ExprVisitor for Interpreter {
         match op.value {
             Operator::Min => match value {
                 Value::Number(n) => Ok(Value::Number(-n)),
-                _ => return Err(op_err),
+                _ => Err(op_err),
             },
             Operator::Not => match value {
                 Value::Boolean(b) => Ok(Value::Boolean(!b)),
@@ -315,12 +320,10 @@ impl ExprVisitor for Interpreter {
         match value {
             Value::Function(function) => function.call(self, list),
             Value::Class(class) => class.call(self, list),
-            _ => {
-                return Err(RuntimeError::SyntaxError(
-                    "invalid callee".to_string(),
-                    span.clone(),
-                ))
-            }
+            _ => Err(RuntimeError::SyntaxError(
+                "invalid callee".to_string(),
+                span.clone(),
+            )),
         }
     }
 
@@ -380,6 +383,11 @@ impl ExprVisitor for Interpreter {
             _ => unimplemented!(),
         }
         Ok(right)
+    }
+
+    fn visit_this(&mut self, this: &ThisExpr) -> Self::Item {
+        println!("12313");
+        self.look_up_variable(&this.into())
     }
 
     fn visit_numeric(&mut self, lit: &NumericLiteral) -> Self::Item {

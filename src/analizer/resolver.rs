@@ -58,7 +58,7 @@ impl<'a> Resolver<'a> {
         self.walk_expr(expr)
     }
 
-    fn resolve_block(&mut self, block: &Vec<Statement>) -> ResolveResult<()> {
+    fn resolve_block(&mut self, block: &[Statement]) -> ResolveResult<()> {
         for stmt in block {
             self.resolve_stmt(stmt)?;
         }
@@ -134,7 +134,7 @@ impl<'a> StmtVisitor for Resolver<'a> {
         self.resolve_expr(expr)
     }
 
-    fn visit_block(&mut self, block: &Vec<Statement>) -> Self::Item {
+    fn visit_block(&mut self, block: &[Statement]) -> Self::Item {
         self.begin_scope();
         self.resolve_block(block)?;
         self.end_scope();
@@ -205,9 +205,18 @@ impl<'a> StmtVisitor for Resolver<'a> {
         self.declare(id)?;
         self.define(id);
 
+        self.begin_scope();
+
+        // 把this放入scope中
+        self.scopes
+            .last_mut()
+            .unwrap()
+            .insert("this".to_string(), IdentState::Declared);
+
         for f in body {
             self.resolve_function(f, BlockType::Method)?;
         }
+        self.end_scope();
         Ok(())
     }
 }
@@ -280,11 +289,16 @@ impl<'a> ExprVisitor for Resolver<'a> {
     fn visit_set(&mut self, expr: &SetExpr) -> Self::Item {
         let SetExpr {
             object,
-            property,
+            property: _,
             value,
         } = expr;
         self.resolve_expr(object)?;
         self.resolve_expr(value)?;
+        Ok(())
+    }
+
+    fn visit_this(&mut self, this: &ThisExpr) -> Self::Item {
+        self.resolve_local(&this.into());
         Ok(())
     }
 

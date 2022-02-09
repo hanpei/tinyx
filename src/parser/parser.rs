@@ -75,28 +75,27 @@ impl<'a> Parser<'a> {
         if self.expect_one_of(&[TokenKind::Semi, TokenKind::Eol, TokenKind::BraceClose]) {
             return true;
         }
-        return false;
+        false
     }
 
     pub(super) fn expect(&mut self, kind: TokenKind) -> ParseResult<()> {
         match &self.current_token.kind {
             ty if ty == &kind => Ok(()),
-            _ => {
-                return Err(ParserError::unexpected_token(
-                    self.lexer.filename,
-                    &self.current_token.kind,
-                    &kind,
-                    self.current_token.loc.start,
-                ));
-            }
+            _ => Err(ParserError::unexpected_token(
+                self.lexer.filename,
+                &self.current_token.kind,
+                &kind,
+                self.current_token.loc.start,
+            )),
         }
     }
 
     pub(super) fn eat(&mut self, kind: TokenKind) -> ParseResult<()> {
         match self.expect(kind) {
-            Ok(_) => Ok(self.consume()),
+            Ok(_) => self.consume(),
             Err(e) => return Err(e),
         }
+        Ok(())
     }
 
     pub(super) fn token_is(&mut self, expect_kind: TokenKind) -> bool {
@@ -113,7 +112,7 @@ impl<'a> Parser<'a> {
                 return true;
             }
         }
-        return false;
+        false
     }
 
     pub fn parse(&mut self) -> ParseResult<Ast> {

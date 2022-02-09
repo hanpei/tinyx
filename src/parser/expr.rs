@@ -2,7 +2,7 @@ use crate::{
     ast::*,
     error::ParserError,
     position::{Span, WithSpan},
-    token::{Operator, TokenKind},
+    token::{Keyword, Operator, TokenKind},
 };
 
 use super::{parser::Parser, ParseResult, MAXIMUM_ARGS};
@@ -43,12 +43,10 @@ impl<'a> Parser<'a> {
                 member.property,
                 self.parse_assign_expr()?,
             ))),
-            _ => {
-                return Err(ParserError::invalid_assignment(
-                    self.lexer.filename,
-                    span_op.loc.start,
-                ));
-            }
+            _ => Err(ParserError::invalid_assignment(
+                self.lexer.filename,
+                span_op.loc.start,
+            )),
         }
     }
 
@@ -251,6 +249,7 @@ impl<'a> Parser<'a> {
      *      : Literal
      *      | Identifier
      *      | ParenthesizedExpression
+     *      | ThisExpression
      *      ;
      */
     fn parse_primary_expr(&mut self) -> ParseResult<Expr> {
@@ -260,14 +259,11 @@ impl<'a> Parser<'a> {
             }
             TokenKind::Identifier => self.parse_identifier_expr(),
             TokenKind::ParenOpen => self.parse_parenthesized_expr(),
-            _ => {
-                println!("parse_primary_expr error");
-                self.log();
-                return Err(ParserError::invalid_token(
-                    self.lexer.filename,
-                    self.current_token.loc.start,
-                ));
-            } // _ => unimplemented!(),
+            TokenKind::Keyword(Keyword::This) => self.parse_this_expr(),
+            _ => Err(ParserError::invalid_token(
+                self.lexer.filename,
+                self.current_token.loc.start,
+            )), // _ => unimplemented!(),
         }
     }
 
@@ -325,6 +321,16 @@ impl<'a> Parser<'a> {
         );
         self.consume();
         Ok(expr)
+    }
+
+    pub fn parse_this_expr(&mut self) -> ParseResult<Expr> {
+        self.expect(TokenKind::Keyword(Keyword::This))?;
+        let expr = ThisExpr::new(Span::new(
+            self.lexer.filename.to_string(),
+            self.current_token.loc,
+        ));
+        self.consume();
+        Ok(Expr::This(expr))
     }
 
     /**

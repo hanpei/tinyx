@@ -39,7 +39,7 @@ impl EnvMethod for Rc<RefCell<Environment>> {
                 .borrow()
                 .outer
                 .clone()
-                .expect(&format!("No enclosing environment at {}", i));
+                .unwrap_or_else(|| panic!("No enclosing environment at {}", i));
             environment = Rc::clone(&parent);
         }
         environment

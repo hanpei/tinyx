@@ -7,7 +7,7 @@ fn interpret(contents: &str) {
     let mut parser = Parser::new(lexer);
     let ast = parser.parse();
 
-    let mut i = Interpreter::new();
+    let mut i = Interpreter::default();
     i.interpret(ast.unwrap()).unwrap();
 }
 

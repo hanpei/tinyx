@@ -22,7 +22,7 @@ pub enum Value {
 impl Value {
     pub fn is_truthy(&self) -> bool {
         match self {
-            Value::Boolean(b) => *b == true,
+            Value::Boolean(b) => *b,
             Value::Null => false,
             // Value::String(_) => todo!(),
             // Value::Number(_) => todo!(),
@@ -65,7 +65,7 @@ impl fmt::Display for Value {
     }
 }
 
-fn fmt_array(array: &Vec<Value>, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+fn fmt_array(array: &[Value], f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(
         f,
         "[ {} ]",

@@ -1,13 +1,11 @@
-class Person { }
+class Person { 
+    constructor(name) {
+        this.name = name
+    }
+    say() {
+        print this.name;
+    }
+}
 
-let jane = Person();
-let tom = Person();
-
-jane.name = "Jane";
-jane.age=1;
-jane.age = 12;
-tom.name ="tom"
-
-print jane.name;
-print jane.age;
-print tom.name;
+let p = Person("abc");
+p.say()

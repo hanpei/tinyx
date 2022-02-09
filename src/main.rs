@@ -20,14 +20,14 @@ fn main() {
     // println!("\n-------TOKEN END -----------\n\n");
 
     println!("\n-------- AST START ----------\n");
-    let lexer = Lexer::new(&contents.as_bytes(), "source.txt");
+    let lexer = Lexer::new(contents.as_bytes(), "source.txt");
     let mut parser = Parser::new(lexer);
     let ast = parser.parse().unwrap();
     println!("{:#}", ast);
     println!("\n-------- AST END -----------\n\n");
 
     println!("\n------ INTERPRETER START ------------\n");
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = Interpreter::default();
     let mut r = Resolver::new(&mut interpreter);
     match r.resolve(&ast) {
         Ok(_) => interpreter

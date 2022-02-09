@@ -156,6 +156,7 @@ impl Display for Expr {
             Expr::Logical(l) => write!(f, "{}", l),
             Expr::Get(m) => write!(f, "{}", m),
             Expr::Set(s) => write!(f, "{}", s),
+            Expr::This(t) => write!(f, "{}", t),
         }
     }
 }
@@ -206,7 +207,7 @@ impl Display for CallExpr {
         write!(f, "{{ ")?;
         write!(f, "callee: {}, ", self.callee)?;
 
-        if self.arguments.len() > 0 {
+        if self.arguments.is_empty() {
             write!(f, "args: [ ")?;
             for (i, arg) in self.arguments.iter().enumerate() {
                 if i == self.arguments.len() - 1 {
@@ -267,5 +268,15 @@ impl Display for StringLiteral {
 impl Display for NumericLiteral {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.value)
+    }
+}
+
+impl Display for ThisExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "this@{}:{}",
+            self.span.loc.start.ln, self.span.loc.start.col
+        )
     }
 }

@@ -1,7 +1,7 @@
 mod callable;
+pub mod class;
 pub mod env;
 pub mod function;
-pub mod class;
 mod interpreter;
 pub mod visitor;
 

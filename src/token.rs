@@ -69,6 +69,7 @@ impl std::fmt::Display for TokenKind {
 
 #[derive(Debug, PartialEq)]
 pub enum Keyword {
+    Nil,
     Let,
     If,
     Else,
@@ -78,38 +79,43 @@ pub enum Keyword {
     Print,
     Class,
     Extends,
+    This,
 }
 
 impl std::fmt::Display for Keyword {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use Keyword::*;
         match self {
-            Keyword::Let => write!(f, "Let"),
-            Keyword::If => write!(f, "If"),
-            Keyword::Else => write!(f, "Else"),
-            Keyword::Fn => write!(f, "Function"),
-            Keyword::Return => write!(f, "Return"),
-            Keyword::While => write!(f, "While"),
-            Keyword::Print => write!(f, "Print"),
-            Keyword::Class => write!(f, "Class"),
-            Keyword::Extends => write!(f, "Extends"),
+            Let => write!(f, "Let"),
+            If => write!(f, "If"),
+            Else => write!(f, "Else"),
+            Fn => write!(f, "Function"),
+            Return => write!(f, "Return"),
+            While => write!(f, "While"),
+            Print => write!(f, "Print"),
+            Class => write!(f, "Class"),
+            Extends => write!(f, "Extends"),
+            This => write!(f, "This"),
+            _ => write!(f, ""),
         }
     }
 }
 
-impl Keyword {
-    pub fn from_str(value: &str) -> Option<Keyword> {
+impl From<&String> for Keyword {
+    fn from(s: &String) -> Self {
         use Keyword::*;
-        match value {
-            "let" => Some(Let),
-            "if" => Some(If),
-            "else" => Some(Else),
-            "fn" => Some(Fn),
-            "return" => Some(Return),
-            "while" => Some(While),
-            "print" => Some(Print),
-            "class" => Some(Class),
-            "extends" => Some(Extends),
-            _ => None,
+        match s.as_str() {
+            "let" => Let,
+            "if" => If,
+            "else" => Else,
+            "fn" => Fn,
+            "return" => Return,
+            "while" => While,
+            "print" => Print,
+            "class" => Class,
+            "extends" => Extends,
+            "this" => This,
+            _ => Nil,
         }
     }
 }

@@ -19,7 +19,7 @@ pub trait StmtVisitor {
     }
 
     fn visit_expr_stmt(&mut self, expr: &Expr) -> Self::Item;
-    fn visit_block(&mut self, block: &Vec<Statement>) -> Self::Item;
+    fn visit_block(&mut self, block: &[Statement]) -> Self::Item;
     fn visit_empty(&mut self) -> Self::Item;
     fn visit_variable_declare(&mut self, decl: &VariableDeclaration) -> Self::Item;
     fn visit_function_declare(&mut self, decl: &FunctionDeclaration) -> Self::Item;
@@ -48,6 +48,7 @@ pub trait ExprVisitor {
             Expr::Logical(l) => self.visit_logical(l),
             Expr::Get(m) => self.visit_get(m),
             Expr::Set(s) => self.visit_set(s),
+            Expr::This(t) => self.visit_this(t),
         }
     }
 
@@ -59,6 +60,7 @@ pub trait ExprVisitor {
     fn visit_logical(&mut self, expr: &LogicalExpr) -> Self::Item;
     fn visit_get(&mut self, expr: &GetExpr) -> Self::Item;
     fn visit_set(&mut self, expr: &SetExpr) -> Self::Item;
+    fn visit_this(&mut self, this: &ThisExpr) -> Self::Item;
 
     // literal ===============================
     fn visit_numeric(&mut self, lit: &NumericLiteral) -> Self::Item;

@@ -1,11 +1,8 @@
-use crate::{
-    ast::{FunctionDeclaration, Statement},
-    error::RuntimeError,
-    value::Value,
-};
+use crate::{ast::Statement, error::RuntimeError, value::Value};
 
 use super::{
     callable::Callable,
+    class::Instance,
     env::{Env, EnvMethod},
     EvalResult, Interpreter,
 };
@@ -30,6 +27,15 @@ impl Function {
             params,
             body,
             closure,
+        }
+    }
+
+    pub fn bind(self, instance: &Instance) -> Self {
+        let mut this_env = Env::extends(&self.closure);
+        this_env.define("this".to_string(), Value::Instance(instance.clone()));
+        Function {
+            closure: this_env,
+            ..self
         }
     }
 }
@@ -60,7 +66,7 @@ impl Callable for Function {
             Ok(_) => Ok(Value::Null),
             Err(e) => match e {
                 RuntimeError::ReturnedValue(v) => Ok(v),
-                _ => return Err(e),
+                _ => Err(e),
             },
         }
     }

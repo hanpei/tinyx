@@ -66,46 +66,42 @@ impl<'a> Lexer<'a> {
         self.skip_whitespace();
         let start = self.pos();
         match self.advance() {
-            Some(c) => {
-                return Ok(match c {
-                    b'0'..=b'9' => self.read_number(c, start)?,
-                    b'\r' | b'\n' => self.read_eol(start),
-                    b'"' => self.read_string(c, start)?,
-                    b'a'..=b'z' | b'A'..=b'Z' => self.read_identifier(c, start)?,
-                    b'/' => {
-                        if Some(b'/') == self.peek() {
-                            self.skip_comment()?
-                        } else {
-                            self.read_operator(c, start)?
-                        }
-                    }
-                    b'+' | b'-' | b'*' | b'=' | b'>' | b'<' | b'!' | b'|' | b'&' => {
+            Some(c) => Ok(match c {
+                b'0'..=b'9' => self.read_number(c, start)?,
+                b'\r' | b'\n' => self.read_eol(start),
+                b'"' => self.read_string(c, start)?,
+                b'a'..=b'z' | b'A'..=b'Z' => self.read_identifier(c, start)?,
+                b'/' => {
+                    if Some(b'/') == self.peek() {
+                        self.skip_comment()?
+                    } else {
                         self.read_operator(c, start)?
                     }
-                    b',' => Token::new(TokenKind::Comma, ",".to_string(), start, self.pos()),
-                    b';' => Token::new(TokenKind::Semi, ";".to_string(), start, self.pos()),
-                    b'{' => Token::new(TokenKind::BraceOpen, "{".to_string(), start, self.pos()),
-                    b'}' => Token::new(TokenKind::BraceClose, "}".to_string(), start, self.pos()),
-                    b'(' => Token::new(TokenKind::ParenOpen, "(".to_string(), start, self.pos()),
-                    b')' => Token::new(TokenKind::ParenClose, ")".to_string(), start, self.pos()),
-                    b'.' => Token::new(TokenKind::Dot, ".".to_string(), start, self.pos()),
-                    _ => {
-                        return Err(ParserError::invalid_charactor(
-                            self.filename,
-                            c as char,
-                            start,
-                        ));
-                    }
-                })
-            }
-            None => {
-                return Ok(Token::new(
-                    TokenKind::Eof,
-                    "EndOfFile".to_string(),
-                    start,
-                    self.pos(),
-                ))
-            }
+                }
+                b'+' | b'-' | b'*' | b'=' | b'>' | b'<' | b'!' | b'|' | b'&' => {
+                    self.read_operator(c, start)?
+                }
+                b',' => Token::new(TokenKind::Comma, ",".to_string(), start, self.pos()),
+                b';' => Token::new(TokenKind::Semi, ";".to_string(), start, self.pos()),
+                b'{' => Token::new(TokenKind::BraceOpen, "{".to_string(), start, self.pos()),
+                b'}' => Token::new(TokenKind::BraceClose, "}".to_string(), start, self.pos()),
+                b'(' => Token::new(TokenKind::ParenOpen, "(".to_string(), start, self.pos()),
+                b')' => Token::new(TokenKind::ParenClose, ")".to_string(), start, self.pos()),
+                b'.' => Token::new(TokenKind::Dot, ".".to_string(), start, self.pos()),
+                _ => {
+                    return Err(ParserError::invalid_charactor(
+                        self.filename,
+                        c as char,
+                        start,
+                    ));
+                }
+            }),
+            None => Ok(Token::new(
+                TokenKind::Eof,
+                "EndOfFile".to_string(),
+                start,
+                self.pos(),
+            )),
         }
     }
 
@@ -168,7 +164,7 @@ impl<'a> Lexer<'a> {
             let lo = self.cursor;
             let mut hi = lo;
             while self.peek() != Some(b'}') {
-                hi = hi + 1;
+                hi += 1;
                 self.next_pos();
             }
             let code = &self.source[lo..hi];
@@ -223,9 +219,9 @@ impl<'a> Lexer<'a> {
         } else if &buf == "null" {
             Ok(Token::new(TokenKind::Null, buf, start, self.pos()))
         } else {
-            match Keyword::from_str(&buf) {
-                Some(key) => Ok(Token::new(TokenKind::Keyword(key), buf, start, self.pos())),
-                None => Ok(Token::new(TokenKind::Identifier, buf, start, self.pos())),
+            match Keyword::from(&buf) {
+                Keyword::Nil => Ok(Token::new(TokenKind::Identifier, buf, start, self.pos())),
+                key => Ok(Token::new(TokenKind::Keyword(key), buf, start, self.pos())),
             }
         }
     }

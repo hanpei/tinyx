@@ -17,6 +17,7 @@ pub enum Expr {
     Call(CallExpr),
     Get(GetExpr),
     Set(SetExpr),
+    This(ThisExpr),
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -167,6 +168,26 @@ impl SetExpr {
             object: Box::new(object),
             property,
             value: Box::new(value),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct ThisExpr {
+    pub span: Span,
+}
+
+impl ThisExpr {
+    pub fn new(span: Span) -> Self {
+        Self { span }
+    }
+}
+
+impl From<&ThisExpr> for Identifier {
+    fn from(this: &ThisExpr) -> Self {
+        Identifier {
+            name: "this".to_string(),
+            span: this.span.clone(),
         }
     }
 }

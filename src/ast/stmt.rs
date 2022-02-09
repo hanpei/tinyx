@@ -41,10 +41,7 @@ impl IfStatement {
         Self {
             test: Box::new(test),
             consequent: Box::new(consequent),
-            alternate: match alternate {
-                Some(stmt) => Some(Box::new(stmt)),
-                None => None,
-            },
+            alternate: alternate.map(Box::new),
         }
     }
 }
@@ -70,12 +67,7 @@ pub struct ReturnStatement {
 
 impl ReturnStatement {
     pub fn new(argument: Option<Expr>) -> Self {
-        Self {
-            argument: match argument {
-                Some(expr) => Some(expr),
-                None => None,
-            },
-        }
+        Self { argument }
     }
 }
 
