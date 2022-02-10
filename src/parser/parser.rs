@@ -8,7 +8,6 @@ use super::ParseResult;
 
 pub struct Parser<'a> {
     pub lexer: Lexer<'a>,
-    pub ast: Ast,
     pub current_token: Token,
 }
 
@@ -16,8 +15,6 @@ impl<'a> Parser<'a> {
     pub fn new(lexer: Lexer<'a>) -> Self {
         Self {
             lexer,
-            // lexer: Lexer::new(source.as_bytes(), filename),
-            ast: Program::new(Vec::new()),
             current_token: Token::new(
                 TokenKind::None,
                 "init".to_string(),
@@ -129,7 +126,7 @@ impl<'a> Parser<'a> {
         self.consume();
         let node = self.parse_statement_list()?;
         self.eat(TokenKind::Eof)?;
-        let program = Program::new(node);
+        let program = Program::new(node, Some(self.lexer.filename.to_string()));
         Ok(program)
     }
 }

@@ -18,6 +18,7 @@ pub enum Expr {
     Get(GetExpr),
     Set(SetExpr),
     This(ThisExpr),
+    Super(SuperExpr),
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -187,6 +188,27 @@ impl From<&ThisExpr> for Identifier {
     fn from(this: &ThisExpr) -> Self {
         Identifier {
             name: "this".to_string(),
+            span: this.span.clone(),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct SuperExpr {
+    pub method: Identifier,
+    pub span: Span,
+}
+
+impl SuperExpr {
+    pub fn new(method: Identifier, span: Span) -> Self {
+        Self { method, span }
+    }
+}
+
+impl From<&SuperExpr> for Identifier {
+    fn from(this: &SuperExpr) -> Self {
+        Identifier {
+            name: "super".to_string(),
             span: this.span.clone(),
         }
     }

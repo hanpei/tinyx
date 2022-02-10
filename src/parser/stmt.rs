@@ -57,6 +57,7 @@ impl<'a> Parser<'a> {
             TokenKind::Keyword(Keyword::While) => self.parse_while_stmt(),
             TokenKind::Keyword(Keyword::Class) => self.parse_class_declaration(),
             TokenKind::Keyword(Keyword::This) => self.parse_expression_stmt(),
+            TokenKind::Keyword(Keyword::Super) => self.parse_expression_stmt(),
             _ => {
                 println!("parse_statment error token: ");
                 self.log();
@@ -221,10 +222,10 @@ impl<'a> Parser<'a> {
     fn parse_class_declaration(&mut self) -> ParseResult<Statement> {
         self.eat(TokenKind::Keyword(Keyword::Class))?;
         let id = self.parse_identifier()?;
-
+        let mut superclass = None;
         if self.token_is(TokenKind::Keyword(Keyword::Extends)) {
             self.eat(TokenKind::Keyword(Keyword::Extends))?;
-            self.parse_identifier()?;
+            superclass = Some(self.parse_identifier()?);
         }
 
         self.eat(TokenKind::BraceOpen)?;
@@ -243,7 +244,7 @@ impl<'a> Parser<'a> {
         self.maybe(TokenKind::Eol);
         self.eat(TokenKind::BraceClose)?;
 
-        let class = ClassDeclaration::new(id, list);
+        let class = ClassDeclaration::new(id, superclass, list);
         Ok(Statement::ClassDeclaration(class))
     }
 

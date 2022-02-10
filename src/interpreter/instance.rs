@@ -23,7 +23,7 @@ impl Instance {
             return Some(v.clone());
         };
         if let Some(method) = self.class.get_method(prop) {
-            let m = method.clone().bind(self);
+            let m = method.bind(self);
             return Some(Value::Function(m));
         }
         None

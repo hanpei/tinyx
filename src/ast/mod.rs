@@ -12,11 +12,12 @@ pub type Ast = Program;
 
 #[derive(Debug, PartialEq)]
 pub struct Program {
+    pub file: Option<String>,
     pub body: Vec<Statement>,
 }
 
 impl Program {
-    pub fn new(node: Vec<Statement>) -> Self {
-        Program { body: node }
+    pub fn new(node: Vec<Statement>, file: Option<String>) -> Self {
+        Program { body: node, file }
     }
 }

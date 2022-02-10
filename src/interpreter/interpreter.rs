@@ -1,4 +1,4 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, mem, rc::Rc};
 
 use crate::{ast::*, error::RuntimeError, token::Operator, value::Value};
 
@@ -148,7 +148,27 @@ impl StmtVisitor for Interpreter {
     }
 
     fn visit_class_declare(&mut self, class: &ClassDeclaration) -> Self::Item {
-        let ClassDeclaration { id, body } = class;
+        let ClassDeclaration { id, super_id, body } = class;
+
+        //super class
+        let mut super_env = Env::extends(&self.env);
+        let mut super_class = None;
+        if let Some(ident) = super_id {
+            match self.visit_ident(ident)? {
+                Value::Class(class) => {
+                    mem::swap(&mut self.env, &mut super_env);
+                    self.env
+                        .define("super".to_string(), Value::Class(class.clone()));
+                    super_class = Some(Rc::new(RefCell::new(class)));
+                }
+                _ => {
+                    return Err(RuntimeError::SyntaxError(
+                        String::from("Superclass must be a class."),
+                        ident.span.clone(),
+                    ));
+                }
+            }
+        }
 
         let mut methods = HashMap::new();
         body.iter().for_each(|m| {
@@ -163,8 +183,14 @@ impl StmtVisitor for Interpreter {
             );
         });
 
-        let class = Class::new(id.name.clone(), methods);
+        if let Some(_ident) = super_id {
+            mem::swap(&mut self.env, &mut super_env);
+        }
+
+        let class = Class::new(id.name.clone(), super_class, methods);
+
         self.env.define(id.name.clone(), Value::Class(class));
+
         Ok(())
     }
 
@@ -301,6 +327,7 @@ impl ExprVisitor for Interpreter {
     }
 
     fn visit_ident(&mut self, ident: &Identifier) -> Self::Item {
+        // self.env.inner_env().log_store_keys();
         self.look_up_variable(ident)
     }
 
@@ -318,8 +345,8 @@ impl ExprVisitor for Interpreter {
         }
 
         match value {
-            Value::Function(function) => function.call(self, list),
-            Value::Class(class) => class.call(self, list),
+            Value::Function(function) => function.call(self, list, span.clone()),
+            Value::Class(class) => class.call(self, list, span.clone()),
             _ => Err(RuntimeError::SyntaxError(
                 "invalid callee".to_string(),
                 span.clone(),
@@ -390,6 +417,36 @@ impl ExprVisitor for Interpreter {
 
     fn visit_this(&mut self, this: &ThisExpr) -> Self::Item {
         self.look_up_variable(&this.into())
+    }
+
+    fn visit_super(&mut self, expr: &SuperExpr) -> Self::Item {
+        let ident: Identifier = expr.into();
+        let distance = self
+            .locals
+            .get(&ident.to_string())
+            .expect("undefined super in locals");
+
+        let super_class_value = self
+            .env
+            .get_at(*distance, "super")
+            .expect("cannot find super in env");
+        let instance_value = self
+            .env
+            .get_at(*distance - 1, "this")
+            .expect("cannot find this env");
+
+        match (super_class_value, instance_value) {
+            (Value::Class(class), Value::Instance(instance)) => {
+                match class.get_method(&expr.method.name) {
+                    Some(method) => Ok(Value::Function(method.bind(&instance))),
+                    None => Err(RuntimeError::SyntaxError(
+                        format!("Undefined property {}", expr.method.name),
+                        expr.span.clone(),
+                    )),
+                }
+            }
+            _ => unreachable!(),
+        }
     }
 
     fn visit_numeric(&mut self, lit: &NumericLiteral) -> Self::Item {

@@ -9,6 +9,7 @@ use tinyx::{
 
 fn main() {
     let file = File::open("source.txt").unwrap();
+    println!("{:?}", file);
     let mut buf_reader = BufReader::new(file);
 
     let mut contents = String::new();
@@ -23,7 +24,7 @@ fn main() {
     let lexer = Lexer::new(contents.as_bytes(), "source.txt");
     let mut parser = Parser::new(lexer);
     let ast = parser.parse().unwrap();
-    println!("{:#}", ast);
+    // println!("{:#}", ast);
     println!("\n-------- AST END -----------\n\n");
 
     println!("\n------ INTERPRETER START ------------\n");

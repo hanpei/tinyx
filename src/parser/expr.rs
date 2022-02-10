@@ -250,6 +250,7 @@ impl<'a> Parser<'a> {
      *      | Identifier
      *      | ParenthesizedExpression
      *      | ThisExpression
+     *      | SuperExpression
      *      ;
      */
     fn parse_primary_expr(&mut self) -> ParseResult<Expr> {
@@ -260,6 +261,7 @@ impl<'a> Parser<'a> {
             TokenKind::Identifier => self.parse_identifier_expr(),
             TokenKind::ParenOpen => self.parse_parenthesized_expr(),
             TokenKind::Keyword(Keyword::This) => self.parse_this_expr(),
+            TokenKind::Keyword(Keyword::Super) => self.parse_super_expr(),
             _ => Err(ParserError::invalid_token(
                 self.lexer.filename,
                 self.current_token.loc.start,
@@ -331,6 +333,22 @@ impl<'a> Parser<'a> {
         ));
         self.consume();
         Ok(Expr::This(expr))
+    }
+
+    /**
+     *  SuperExpress
+     *      : "super" "." IDENTIFIER
+     *      ;
+     */
+    pub fn parse_super_expr(&mut self) -> ParseResult<Expr> {
+        self.eat(TokenKind::Keyword(Keyword::Super))?;
+        self.eat(TokenKind::Dot)?;
+        let ident = self.parse_identifier()?;
+        let expr = SuperExpr::new(
+            ident,
+            Span::new(self.lexer.filename.to_string(), self.current_token.loc),
+        );
+        Ok(Expr::Super(expr))
     }
 
     /**

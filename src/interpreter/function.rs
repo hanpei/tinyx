@@ -1,4 +1,4 @@
-use crate::{ast::Statement, error::RuntimeError, value::Value};
+use crate::{ast::Statement, error::RuntimeError, position::Span, value::Value};
 
 use super::{
     callable::Callable,
@@ -45,7 +45,12 @@ impl Callable for Function {
         self.params.len()
     }
 
-    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>) -> EvalResult<Value> {
+    fn call(
+        &self,
+        interpreter: &mut Interpreter,
+        args: Vec<Value>,
+        span: Span,
+    ) -> EvalResult<Value> {
         let Function {
             name: _,
             params,
@@ -54,7 +59,7 @@ impl Callable for Function {
         } = self;
 
         if self.arity() != args.len() {
-            return Err(RuntimeError::Error("args number mismatched".into()));
+            return Err(RuntimeError::ArgsMismatched(span));
         }
 
         let mut env = Env::extends(closure);

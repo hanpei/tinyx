@@ -27,6 +27,7 @@ pub enum FnType {
 pub enum ClassType {
     None,
     Class,
+    SubClass,
 }
 
 pub struct Resolver<'a> {
@@ -212,12 +213,30 @@ impl<'a> StmtVisitor for Resolver<'a> {
         let prev = self.class_type.clone();
         self.class_type = ClassType::Class;
 
-        let ClassDeclaration { id, body } = class;
+        let ClassDeclaration { id, super_id, body } = class;
         self.declare(id)?;
         self.define(id);
 
-        self.begin_scope();
+        if let Some(ident) = super_id {
+            if ident.name == id.name {
+                return Err(ResolveError::SyntaxError(
+                    String::from("A class can't inherit from itself."),
+                    ident.span.clone(),
+                ));
+            }
+            self.class_type = ClassType::SubClass;
 
+            self.resolve_local(ident);
+
+            // super scope begin
+            self.begin_scope();
+            self.scopes
+                .last_mut()
+                .unwrap()
+                .insert("super".to_string(), IdentState::Defined);
+        }
+
+        self.begin_scope();
         // 把this放入scope中
         self.scopes
             .last_mut()
@@ -228,6 +247,11 @@ impl<'a> StmtVisitor for Resolver<'a> {
             self.resolve_function(f, FnType::Method)?;
         }
         self.end_scope();
+
+        // super scope end
+        if let Some(_ident) = super_id {
+            self.end_scope();
+        }
 
         self.class_type = prev;
         Ok(())
@@ -317,6 +341,23 @@ impl<'a> ExprVisitor for Resolver<'a> {
             ));
         }
         self.resolve_local(&this.into());
+        Ok(())
+    }
+
+    fn visit_super(&mut self, expr: &SuperExpr) -> Self::Item {
+        match self.class_type {
+            ClassType::None => {
+                return Err(ResolveError::Error(
+                    "Can't use 'super' outside of a class.".to_string(),
+                ))
+            }
+            ClassType::Class => {
+                return Err(ResolveError::Error(
+                    "Can't use 'super' in a class with no superclass.".to_string(),
+                ))
+            }
+            ClassType::SubClass => self.resolve_local(&expr.into()),
+        }
         Ok(())
     }
 

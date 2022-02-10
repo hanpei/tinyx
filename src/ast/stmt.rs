@@ -88,11 +88,12 @@ type ClassBody = Vec<FunctionDeclaration>;
 #[derive(Debug, PartialEq, Clone)]
 pub struct ClassDeclaration {
     pub id: Identifier,
+    pub super_id: Option<Identifier>,
     pub body: ClassBody,
 }
 
 impl ClassDeclaration {
-    pub fn new(id: Identifier, body: ClassBody) -> Self {
-        Self { id, body }
+    pub fn new(id: Identifier, super_id: Option<Identifier>, body: ClassBody) -> Self {
+        Self { id, super_id, body }
     }
 }

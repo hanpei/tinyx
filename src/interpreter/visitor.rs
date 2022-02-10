@@ -49,6 +49,7 @@ pub trait ExprVisitor {
             Expr::Get(m) => self.visit_get(m),
             Expr::Set(s) => self.visit_set(s),
             Expr::This(t) => self.visit_this(t),
+            Expr::Super(s) => self.visit_super(s),
         }
     }
 
@@ -61,6 +62,7 @@ pub trait ExprVisitor {
     fn visit_get(&mut self, expr: &GetExpr) -> Self::Item;
     fn visit_set(&mut self, expr: &SetExpr) -> Self::Item;
     fn visit_this(&mut self, this: &ThisExpr) -> Self::Item;
+    fn visit_super(&mut self, expr: &SuperExpr) -> Self::Item;
 
     // literal ===============================
     fn visit_numeric(&mut self, lit: &NumericLiteral) -> Self::Item;

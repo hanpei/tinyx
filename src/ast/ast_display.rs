@@ -157,6 +157,7 @@ impl Display for Expr {
             Expr::Get(m) => write!(f, "{}", m),
             Expr::Set(s) => write!(f, "{}", s),
             Expr::This(t) => write!(f, "{}", t),
+            Expr::Super(s) => write!(f, "{}", s),
         }
     }
 }
@@ -276,6 +277,15 @@ impl Display for ThisExpr {
         write!(
             f,
             "this@{}:{}",
+            self.span.loc.start.ln, self.span.loc.start.col
+        )
+    }
+}
+impl Display for SuperExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "super@{}:{}",
             self.span.loc.start.ln, self.span.loc.start.col
         )
     }

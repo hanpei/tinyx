@@ -80,6 +80,7 @@ pub enum Keyword {
     Class,
     Extends,
     This,
+    Super,
 }
 
 impl std::fmt::Display for Keyword {
@@ -96,6 +97,7 @@ impl std::fmt::Display for Keyword {
             Class => write!(f, "Class"),
             Extends => write!(f, "Extends"),
             This => write!(f, "This"),
+            Super => write!(f, "Super"),
             _ => write!(f, ""),
         }
     }
@@ -115,6 +117,7 @@ impl From<&String> for Keyword {
             "class" => Class,
             "extends" => Extends,
             "this" => This,
+            "super" => Super,
             _ => Nil,
         }
     }

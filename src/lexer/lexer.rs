@@ -280,7 +280,10 @@ impl<'a> Lexer<'a> {
     fn skip_comment(&mut self) -> ParseResult<Token> {
         while let Some(c) = self.peek() {
             match c {
-                b'\n' | b'\r' => break,
+                b'\n' | b'\r' => {
+                    self.advance();
+                    break;
+                }
                 _ => self.advance(),
             };
         }

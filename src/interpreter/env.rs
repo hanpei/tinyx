@@ -12,6 +12,7 @@ pub trait EnvMethod {
     fn assign_at(&mut self, distance: usize, name: &str, value: Value) -> bool;
     fn get(&self, name: &str) -> Option<Value>;
     fn assign(&mut self, name: &str, value: Value) -> bool;
+    fn inner_env(&self) -> Environment;
 }
 
 impl EnvMethod for Rc<RefCell<Environment>> {
@@ -69,6 +70,10 @@ impl EnvMethod for Rc<RefCell<Environment>> {
     fn assign(&mut self, name: &str, value: Value) -> bool {
         self.borrow_mut().assign(name, value)
     }
+
+    fn inner_env(&self) -> Environment {
+        self.borrow().clone()
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -105,6 +110,13 @@ impl Environment {
                 Some(ref outer) => outer.borrow_mut().assign(name, value),
                 None => false,
             }
+        }
+    }
+
+    pub fn log_store_keys(&self) {
+        println!("log_store_keys: ");
+        for key in self.store.keys() {
+            println!("{}", key);
         }
     }
 }

@@ -75,7 +75,8 @@ pub enum RuntimeError {
     SyntaxError(String, Span),
     ReferenceError(String, Span),
     ReturnedValue(Value), // for return stmt result
-    Error(String),        // TODO: add span
+    ArgsMismatched(Span),
+    Error(String), // TODO: add span
 }
 
 impl std::fmt::Display for RuntimeError {
@@ -83,13 +84,18 @@ impl std::fmt::Display for RuntimeError {
         match self {
             RuntimeError::SyntaxError(msg, span) => write!(
                 f,
-                "Syntax Error: {}, at: {}:{}:{}",
+                "SyntaxError: {}, at: {}:{}:{}",
                 msg, span.filename, span.loc.start.ln, span.loc.start.col
             ),
             RuntimeError::ReferenceError(variabale, span) => write!(
                 f,
                 "ReferenceError: {} is not defined, at: {}:{}:{}",
                 variabale, span.filename, span.loc.start.ln, span.loc.start.col
+            ),
+            RuntimeError::ArgsMismatched(span) => write!(
+                f,
+                "SyntaxError: args number mismatched, at: {}:{}:{}",
+                span.filename, span.loc.end.ln, span.loc.end.col
             ),
             RuntimeError::Error(msg) => write!(f, "RuntimeError: {}", msg),
             RuntimeError::ReturnedValue(value) => write!(f, "{}", value),
@@ -100,6 +106,7 @@ impl std::fmt::Display for RuntimeError {
 pub enum ResolveError {
     Error(String),
     DeclaredError(String, Span),
+    SyntaxError(String, Span),
 }
 
 impl std::fmt::Display for ResolveError {
@@ -110,6 +117,11 @@ impl std::fmt::Display for ResolveError {
                 f,
                 "SyntaxError:: Identifier '{}' has already been declared, at: {}:{}:{}",
                 name, span.filename, span.loc.start.ln, span.loc.start.col
+            ),
+            ResolveError::SyntaxError(msg, span) => write!(
+                f,
+                "SyntaxError:: {}, at: {}:{}:{}",
+                msg, span.filename, span.loc.start.ln, span.loc.start.col
             ),
         }
     }
