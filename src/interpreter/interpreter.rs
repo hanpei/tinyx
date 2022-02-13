@@ -291,6 +291,10 @@ impl ExprVisitor for Interpreter {
         );
 
         match op.value {
+            Operator::Add => match value {
+                Value::Number(n) => Ok(Value::Number(n)),
+                _ => Err(op_err),
+            },
             Operator::Min => match value {
                 Value::Number(n) => Ok(Value::Number(-n)),
                 _ => Err(op_err),

@@ -1,6 +1,6 @@
 use crate::{
     position::{Pos, Span},
-    token::TokenKind,
+    token::{Token, TokenKind},
     value::Value,
 };
 
@@ -47,13 +47,13 @@ impl ParserError {
 
     pub fn unexpected_token(
         file: &str,
-        current: &TokenKind,
+        current: &Token,
         expect: &TokenKind,
         pos: Pos,
     ) -> ParserError {
         Self::UnexpectedToken(format!(
-            "unexpected token: {}, expected {} at {}:{}:{}",
-            current, expect, file, pos.ln, pos.col
+            "unexpected token: [{}], maybe expected [{}] in {}:{}:{}",
+            current.raw, expect, file, pos.ln, pos.col
         ))
     }
     pub fn missing_semi(file: &str, pos: Pos) -> ParserError {

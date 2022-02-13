@@ -15,9 +15,9 @@ impl<'a> Parser<'a> {
     pub(super) fn parse_statement_list(&mut self) -> ParseResult<Vec<Statement>> {
         let mut list = Vec::new();
 
-        while !self.token_is(TokenKind::Eof) && !self.token_is(TokenKind::BraceClose) {
+        while !self.is_stmt_end() {
             match self.current_token.kind {
-                TokenKind::Eol => self.consume(),
+                // TokenKind::Eol => self.consume(),
                 _ => list.push(self.parse_statment()?),
             }
         }
@@ -95,14 +95,11 @@ impl<'a> Parser<'a> {
      */
     fn parse_block_stmt(&mut self) -> ParseResult<Statement> {
         self.eat(TokenKind::BraceOpen)?;
-        self.maybe(TokenKind::Eol);
         let mut list: Vec<Statement> = Vec::new();
         if self.current_token.kind != TokenKind::BraceClose {
             list = self.parse_statement_list()?;
         }
-        self.maybe(TokenKind::Eol);
         self.eat(TokenKind::BraceClose)?;
-        self.maybe(TokenKind::Eol);
 
         Ok(Statement::Block(list))
     }
@@ -229,7 +226,6 @@ impl<'a> Parser<'a> {
         }
 
         self.eat(TokenKind::BraceOpen)?;
-        self.maybe(TokenKind::Eol);
 
         let mut list = Vec::new();
         while !self.token_is(TokenKind::BraceClose) && !self.token_is(TokenKind::Eof) {
@@ -241,7 +237,6 @@ impl<'a> Parser<'a> {
             }
         }
 
-        self.maybe(TokenKind::Eol);
         self.eat(TokenKind::BraceClose)?;
 
         let class = ClassDeclaration::new(id, superclass, list);
@@ -278,15 +273,23 @@ impl<'a> Parser<'a> {
      */
     fn parse_return_stmt(&mut self) -> ParseResult<Statement> {
         self.eat(TokenKind::Keyword(Keyword::Return))?;
-
-        let argument = if !self.is_stmt_end() {
-            Some(self.parse_expression()?)
+        if self.could_be_semi {
+            let stmt = ReturnStatement::new(None);
+            self.expect_stmt_terminator()?;
+            return Ok(Statement::Return(stmt));
         } else {
-            None
-        };
-        let stmt = ReturnStatement::new(argument);
-        self.expect_stmt_terminator()?;
-        Ok(Statement::Return(stmt))
+            if !self.is_stmt_end() {
+                // self.log();
+                let argument = Some(self.parse_expression()?);
+                let stmt = ReturnStatement::new(argument);
+                self.expect_stmt_terminator()?;
+                return Ok(Statement::Return(stmt));
+            } else {
+                let stmt = ReturnStatement::new(None);
+                self.expect_stmt_terminator()?;
+                return Ok(Statement::Return(stmt));
+            };
+        }
     }
 
     /**

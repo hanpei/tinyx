@@ -127,7 +127,7 @@ impl Display for ReturnStatement {
         if let Some(expr) = &self.argument {
             write!(f, "Return: {}", expr)
         } else {
-            Ok(())
+            write!(f, "Return;")
         }
     }
 }

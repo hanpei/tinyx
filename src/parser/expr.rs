@@ -176,6 +176,7 @@ impl<'a> Parser<'a> {
         if self.expect_one_of(&[
             TokenKind::Operator(Operator::Min),
             TokenKind::Operator(Operator::Not),
+            TokenKind::Operator(Operator::Add),
         ]) {
             let span_op = self.parse_op();
             let argument = self.parse_unary_expr()?;

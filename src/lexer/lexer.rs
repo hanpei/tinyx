@@ -282,6 +282,7 @@ impl<'a> Lexer<'a> {
             match c {
                 b'\n' | b'\r' => {
                     self.advance();
+                    self.newline();
                     break;
                 }
                 _ => self.advance(),
@@ -327,7 +328,7 @@ impl<'a> Lexer<'a> {
             match self.next() {
                 Ok(token) => match token.kind {
                     TokenKind::Eol => {
-                        // println!("eol");
+                        println!("eol");
                         continue;
                     }
                     TokenKind::Eof => {
