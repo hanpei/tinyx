@@ -1,5 +1,6 @@
 pub mod analizer;
 pub mod ast;
+pub mod bytecode;
 pub mod error;
 pub mod interpreter;
 pub mod lexer;
