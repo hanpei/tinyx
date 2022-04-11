@@ -10,7 +10,11 @@ pub struct Chunk {
 }
 
 impl Chunk {
-    pub fn write_chunk(&mut self, code: OpCode, pos: Pos) {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn write(&mut self, code: OpCode, pos: Pos) {
         self.codes.push(code);
         self.positions.push(pos);
     }
@@ -37,16 +41,17 @@ impl Default for Chunk {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
 
     #[test]
     fn it_works() {
         use OpCode::*;
         let mut chunk = Chunk::default();
-        chunk.write_chunk(OpReturn, (1, 1));
+        chunk.write(OpReturn, (1, 1));
 
         let idx = chunk.add_constant(1.2.into());
-        chunk.write_chunk(OpConstant(idx), (1, 2));
+        chunk.write(OpConstant(idx), (1, 2));
 
         println!("{:?}", chunk);
     }

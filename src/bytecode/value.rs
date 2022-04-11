@@ -1,12 +1,14 @@
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Number(f64),
+    Null,
 }
 
 impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Value::Number(n) => write!(f, "{}", n),
+            Value::Null => write!(f, "null"),
         }
     }
 }
@@ -39,6 +41,7 @@ impl std::ops::Neg for Value {
     fn neg(self) -> Self::Output {
         match self {
             Value::Number(n) => Value::Number(-n),
+            _ => unimplemented!(),
         }
     }
 }
@@ -50,6 +53,7 @@ impl std::ops::Add for Value {
     fn add(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Value::Number(x), Value::Number(y)) => Value::Number(x + y),
+            _ => unimplemented!(),
         }
     }
 }
@@ -60,6 +64,7 @@ impl std::ops::Sub for Value {
     fn sub(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Value::Number(x), Value::Number(y)) => Value::Number(x - y),
+            _ => unimplemented!(),
         }
     }
 }
@@ -70,6 +75,7 @@ impl std::ops::Mul for Value {
     fn mul(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Value::Number(x), Value::Number(y)) => Value::Number(x * y),
+            _ => unimplemented!(),
         }
     }
 }
@@ -80,6 +86,7 @@ impl std::ops::Div for Value {
     fn div(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Value::Number(x), Value::Number(y)) => Value::Number(x / y),
+            _ => unimplemented!(),
         }
     }
 }

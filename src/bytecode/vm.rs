@@ -5,16 +5,20 @@ use super::OpCode::*;
 use super::Value;
 
 #[derive(Debug)]
-enum InterpretError {
+pub enum InterpretError {
     CompileError,
     RuntimeError,
 }
 
+pub fn interpret(chunk: Chunk) -> Result<(), InterpretError> {
+    let mut vm = Vm::new(chunk);
+    vm.run()
+}
+
 #[derive(Debug)]
-struct Vm {
+pub struct Vm {
     chunk: Chunk,
-    // instruction pointer
-    ip: usize,
+    ip: usize, // instruction pointer
     stack: Vec<Value>,
 }
 
@@ -37,15 +41,16 @@ impl Vm {
         }
     }
 
-    fn interpret(&mut self) -> Result<(), InterpretError> {
-        self.run()
-    }
-
     fn run(&mut self) -> Result<(), InterpretError> {
         while self.ip < self.chunk.codes.len() {
-            // self.log();
+            self.trace();
+
             match self.chunk.codes.get(self.ip).unwrap() {
-                OpReturn => println!("{}", self.pop()),
+                OpReturn => {
+                    let value = self.pop();
+                    println!("\n\n-----------------\nRETURN VALUE: \n");
+                    println!("> {:?}\n\n", value);
+                }
                 OpConstant(idx) => {
                     let value = self.chunk.read_constant(*idx);
                     self.push(value);
@@ -54,10 +59,10 @@ impl Vm {
                     let val = -self.pop();
                     self.push(val);
                 }
-                OpAdd => self.binaryOp(OpAdd),
-                OpSubtract => self.binaryOp(OpSubtract),
-                OpMultiply => self.binaryOp(OpMultiply),
-                OpDivide => self.binaryOp(OpDivide),
+                OpAdd => self.binary_op(OpAdd),
+                OpSubtract => self.binary_op(OpSubtract),
+                OpMultiply => self.binary_op(OpMultiply),
+                OpDivide => self.binary_op(OpDivide),
             };
             self.ip += 1;
         }
@@ -69,10 +74,10 @@ impl Vm {
     }
 
     fn pop(&mut self) -> Value {
-        self.stack.pop().expect("stack empty")
+        self.stack.pop().unwrap_or(Value::Null)
     }
 
-    fn binaryOp(&mut self, op: OpCode) {
+    fn binary_op(&mut self, op: OpCode) {
         let y = self.pop();
         let x = self.pop();
         let result = match op {
@@ -85,10 +90,15 @@ impl Vm {
         self.push(result);
     }
 
-    fn log(&self) {
-        print!("[ ");
-        self.stack.iter().for_each(|value| print!("{:<16}", value));
-        print!(" ]");
+    fn trace(&self) {
+        print!("          ");
+        for i in &self.stack {
+            print!("[ ");
+            print!("{:?}", i);
+            print!(" ]");
+        }
+        println!();
+
         debug::disassemble_instruction(&self.chunk, self.ip);
     }
 }
@@ -106,37 +116,24 @@ mod tests {
     fn it_works() {
         let mut chunk = Chunk::default();
 
-        let idx = chunk.add_constant(1.2.into());
-        chunk.write_chunk(OpConstant(idx), (1, 2));
-        chunk.write_chunk(OpNegate, (1, 2));
-        chunk.write_chunk(OpReturn, (1, 2));
+        let idx = chunk.add_constant(3.2.into());
+        chunk.write(OpConstant(idx), (1, 1));
+        chunk.write(OpReturn, (1, 2));
 
-        let mut vm = Vm::new(chunk);
-        vm.interpret().unwrap();
+        interpret(chunk).unwrap();
     }
 
     #[test]
-    fn arithmetic() {
+    fn test_add() {
         let mut chunk = Chunk::default();
 
-        let idx = chunk.add_constant(1.2.into());
-        chunk.write_chunk(OpConstant(idx), (1, 1));
+        let idx = chunk.add_constant(1.into());
+        chunk.write(OpConstant(idx), (1, 1));
+        let idx = chunk.add_constant(2.into());
+        chunk.write(OpConstant(idx), (1, 2));
+        chunk.write(OpAdd, (1, 3));
+        chunk.write(OpReturn, (1, 4));
 
-        let idx = chunk.add_constant(3.4.into());
-        chunk.write_chunk(OpConstant(idx), (1, 3));
-
-        chunk.write_chunk(OpAdd, (1, 2));
-
-        let idx = chunk.add_constant(5.into());
-        chunk.write_chunk(OpConstant(idx), (1, 5));
-
-        chunk.write_chunk(OpSubtract, (1, 4));
-
-        let mut vm = Vm::new(chunk);
-
-        vm.interpret().unwrap();
-        println!("stack: {:?}", vm.stack);
-        let result = vm.pop();
-        assert_eq!(result, (1.2 + 3.4 - 5.0).into());
+        interpret(chunk).unwrap();
     }
 }

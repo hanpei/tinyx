@@ -39,3 +39,15 @@ fn main() {
 
     println!("\n------- INTERPRETER END -----------\n\n");
 }
+
+#[cfg(test)]
+mod tests {
+    use tinyx::bytecode::{debug::disassemble_chunk, Chunk, OpCode};
+
+    #[test]
+    fn test_write_chunk() {
+        let mut chunk = Chunk::new();
+        chunk.write(OpCode::OpReturn, (1, 1));
+        disassemble_chunk(&chunk, "test chunk");
+    }
+}
